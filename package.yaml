@@ -1,0 +1,33 @@
+name:                network-remote
+version:             0.1.0.0
+github:              "MechDancer/network-remote"
+license:             BSD3
+author:              "MechDancer"
+maintainer:          "berberman, xxczxp"
+copyright:           "2019 MechDancer"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+description:         Please see the README on GitHub at <https://github.com/MechDancer/network-remote#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- network
+- network-multicast
+- text
+
+library:
+  source-dirs: src
+
+tests:
+  network-remote-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - network-remote
