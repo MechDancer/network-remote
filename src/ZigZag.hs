@@ -2,9 +2,13 @@ module ZigZag
     (
     showZigZagCodeHex,
     complementEncodeInteger,
+    complementDecodeInteger,
     zigZagUIntegerToWordList,
     unZigZagUIntegerFromWordListWC,
-    unZigZagUIntegerFromWordListNC
+    unZigZagUIntegerFromWordListNC,
+    unZigZagUIntegerFromWordListNCBE,
+    zigZagSplit,
+    unZigZagMultipleUInteger
     ) where
 
 import qualified Data.ByteString as B
@@ -22,9 +26,14 @@ takeWhile1 :: (a->Bool)->[a]->[a]
 takeWhile1 f a=take (1+ length (takeWhile f a)) a
 
 complementEncodeInteger :: Integer -> Integer
-complementEncodeInteger a= if a>0
+complementEncodeInteger a= if a>=0
   then a*2
   else -2*a-1
+
+complementDecodeInteger :: Integer -> Integer
+complementDecodeInteger a= if (a.&.1)==0
+  then shift a (negate 1)
+  else -(shift (a+1) (negate 1))
 
 -- zigZagUnsignedIntegerToWordList
 -- the Integer should be positive, but it do not check it
@@ -35,15 +44,16 @@ zigZagUIntegerToWordList a=if a>0x7F
 
 -- unZigZagUnsignedIntegerFromWordList with check
 unZigZagUIntegerFromWordListWC :: [Word8] -> Integer
-unZigZagUIntegerFromWordListWC ws= foldr (\a xs-> shift xs 7  + unsafeFromBinDigit8 a) 0 $ takeWhile1 (\k->(k.&.0x80)/=0x80) ws
+unZigZagUIntegerFromWordListWC = unZigZagUIntegerFromWordListNC . takeWhile1 (\k->(k.&.0x80)==0x80)
 
 -- unZigZagUnsignedIntegerFromWordList without check
 unZigZagUIntegerFromWordListNC :: [Word8] -> Integer
-unZigZagUIntegerFromWordListNC = foldr (\a xs-> shift xs 7  + unsafeFromBinDigit8 a) 0
+unZigZagUIntegerFromWordListNC = foldr (\a xs-> shift xs 7  + toInteger (a.&.0x7F) ) 0
+
 
 -- big-endian unZigZagUIntegerFromWordListNC
 unZigZagUIntegerFromWordListNCBE :: [Word8] -> Integer
-unZigZagUIntegerFromWordListNCBE = foldl (\xs a-> shift xs 7  + unsafeFromBinDigit8 a) 0
+unZigZagUIntegerFromWordListNCBE = foldl (\xs a-> shift xs 7  + toInteger (a.&.0x7F) ) 0
 
 -- split a zigZagList that include mutiple ZigZagNumber
 zigZagSplit :: [Word8] -> [[Word8]]
@@ -54,7 +64,7 @@ zigZagSplit = reverse . snd . zigZagSplitBase
 -- in order to improve the efficiencyzigZagSplitBase :: [Word8] -> ([Word8],[[Word8]])
 zigZagSplitBase = foldl (\(buff,result) x->if (x.&.0x80)==0x80
   then (x:buff,result)  --add x into buffer
-  else ([],reverse buff : result))
+  else ([],reverse (x:buff) : result))
   ([],[])
 
 -- unZigZag from a zigZagList that include mutiple ZigZagNumber

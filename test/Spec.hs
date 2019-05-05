@@ -1,2 +1,8 @@
+import ZigZag
+
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = do
+  let a=zigZagUIntegerToWordList 0xFFFF
+  let b=zigZagUIntegerToWordList 0xFFF
+  print . fmap unZigZagUIntegerFromWordListNC $ zigZagSplit (a++b)
