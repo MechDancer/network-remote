@@ -2,3 +2,4 @@
 network-remote.cabal
 *~
 .idea
+*.iml
