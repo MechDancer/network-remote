@@ -1,14 +1,10 @@
 module Network.Remote.ZigZag
   ( showZigZagCodeHex
   , ZigZagList
-  , complementEncodeInteger
-  , complementDecodeInteger
-  , zigZagUIntegerToWordList
-  , unZigZagUIntegerFromWordListWC
-  , unZigZagUIntegerFromWordListNC
-  , unZigZagUIntegerFromWordListNCBE
-  , zigZagSplit
-  , unZigZagMultipleUInteger
+  , encode
+  , decode
+  , encodeMuti
+  , decodeMuti
   ) where
 
 import Data.Bits
@@ -23,32 +19,32 @@ type ZigZagList = [Word8]
 showZigZagCodeHex :: ZigZagList -> String
 showZigZagCodeHex as = foldr (\x sf -> (",0x" ++) . showHex x . sf) id as ""
 
-takeWhile' :: (a -> Bool) -> [a] -> [a]
-takeWhile' f a = take (1 + length (takeWhile f a)) a
+takeWhile1' :: (a -> Bool) -> [a] -> [a]
+takeWhile1' f a = take (1 + length (takeWhile f a)) a
 
-complementEncodeInteger :: Integer -> Integer
-complementEncodeInteger a =
+signToUnsign :: Integer -> Integer
+signToUnsign a =
   if a >= 0
     then a * 2
     else -2 * a - 1
 
-complementDecodeInteger :: Integer -> Integer
-complementDecodeInteger a =
+unsignToSign :: Integer -> Integer
+unsignToSign a =
   if (a .&. 1) == 0
     then shift a (negate 1)
     else -(shift (a + 1) (negate 1))
 
 -- | `zigZagUnsignedIntegerToWordList` encodes a `Integer` to a `ZigZagList`
 -- The Integer should be positive, and we do not check it.
-zigZagUIntegerToWordList :: Integer -> ZigZagList
-zigZagUIntegerToWordList a =
+encodeUnsign :: Integer -> ZigZagList
+encodeUnsign a =
   if a > 0x7F
-    then fromIntegral (a .|. 128) : zigZagUIntegerToWordList (shift a (negate 7))
+    then fromIntegral (a .|. 128) : encodeUnsign (shift a (negate 7))
     else [fromIntegral a]
 
 -- | `unZigZagUnsignedIntegerFromWordList` decodes `Integer` from `ZigZagList` with check
 unZigZagUIntegerFromWordListWC :: ZigZagList -> Integer
-unZigZagUIntegerFromWordListWC = unZigZagUIntegerFromWordListNC . takeWhile' (\k -> (k .&. 0x80) == 0x80)
+unZigZagUIntegerFromWordListWC = unZigZagUIntegerFromWordListNC . takeWhile1' (\k -> (k .&. 0x80) == 0x80)
 
 -- | `unZigZagUnsignedIntegerFromWordList` decodes `Integer` from`ZigZagList` without check
 unZigZagUIntegerFromWordListNC :: ZigZagList -> Integer
@@ -89,3 +85,18 @@ unZigZagMultipleUIntegerBase =
          then (x : buff, result) --add x into buffer
          else ([], unZigZagUIntegerFromWordListNCBE (x : buff) : result))
     ([], [])
+
+-- | encode single Integer
+encode :: Integer->ZigZagList
+encode=encodeUnsign . signToUnsign
+
+decode :: ZigZagList->Integer
+decode=unsignToSign . unZigZagUIntegerFromWordListWC
+
+
+
+encodeMuti :: [Integer]->ZigZagList
+encodeMuti=foldr (\a su->(encode a)++su) []
+
+decodeMuti :: ZigZagList->[Integer]
+decodeMuti = fmap unsignToSign . unZigZagMultipleUInteger
