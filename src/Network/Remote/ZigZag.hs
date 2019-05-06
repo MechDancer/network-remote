@@ -1,10 +1,10 @@
 module Network.Remote.ZigZag
-  ( showZigZagCodeHex
-  , ZigZagList
+  ( ZigZagList
+  , showZigZagCodeHex
   , encode
   , decode
-  , encodeMuti
-  , decodeMuti
+  , encodeM
+  , decodeM
   ) where
 
 import Data.Bits
@@ -22,24 +22,24 @@ showZigZagCodeHex as = foldr (\x sf -> (",0x" ++) . showHex x . sf) id as ""
 takeWhile1' :: (a -> Bool) -> [a] -> [a]
 takeWhile1' f a = take (1 + length (takeWhile f a)) a
 
-signToUnsign :: Integer -> Integer
-signToUnsign a =
+signedToUnsigned :: Integer -> Integer
+signedToUnsigned a =
   if a >= 0
     then a * 2
     else -2 * a - 1
 
-unsignToSign :: Integer -> Integer
-unsignToSign a =
+unsignedToSigned :: Integer -> Integer
+unsignedToSigned a =
   if (a .&. 1) == 0
     then shift a (negate 1)
     else -(shift (a + 1) (negate 1))
 
 -- | `zigZagUnsignedIntegerToWordList` encodes a `Integer` to a `ZigZagList`
 -- The Integer should be positive, and we do not check it.
-encodeUnsign :: Integer -> ZigZagList
-encodeUnsign a =
+encodeUnsigned :: Integer -> ZigZagList
+encodeUnsigned a =
   if a > 0x7F
-    then fromIntegral (a .|. 128) : encodeUnsign (shift a (negate 7))
+    then fromIntegral (a .|. 128) : encodeUnsigned (shift a (negate 7))
     else [fromIntegral a]
 
 -- | `unZigZagUnsignedIntegerFromWordList` decodes `Integer` from `ZigZagList` with check
@@ -87,16 +87,14 @@ unZigZagMultipleUIntegerBase =
     ([], [])
 
 -- | encode single Integer
-encode :: Integer->ZigZagList
-encode=encodeUnsign . signToUnsign
+encode :: Integer -> ZigZagList
+encode = encodeUnsigned . signedToUnsigned
 
-decode :: ZigZagList->Integer
-decode=unsignToSign . unZigZagUIntegerFromWordListWC
+decode :: ZigZagList -> Integer
+decode = unsignedToSigned . unZigZagUIntegerFromWordListWC
 
+encodeM :: [Integer] -> ZigZagList
+encodeM = foldr (\int list -> encode int ++ list) []
 
-
-encodeMuti :: [Integer]->ZigZagList
-encodeMuti=foldr (\a su->(encode a)++su) []
-
-decodeMuti :: ZigZagList->[Integer]
-decodeMuti = fmap unsignToSign . unZigZagMultipleUInteger
+decodeM :: ZigZagList -> [Integer]
+decodeM = fmap unsignedToSigned . unZigZagMultipleUInteger
