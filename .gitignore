@@ -3,4 +3,8 @@ network-remote.cabal
 *~
 .idea
 *.iml
+<<<<<<< HEAD
 .DS_Store
+=======
+.DS_Store
+>>>>>>> fe96e38558a580dc6c65ab4609de7df2a860309c
