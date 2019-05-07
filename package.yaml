@@ -19,6 +19,7 @@ dependencies:
 - text
 - bytestring
 - text-latin1
+- containers
 
 library:
   source-dirs: src
