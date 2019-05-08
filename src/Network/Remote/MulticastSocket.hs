@@ -1,10 +1,16 @@
-module Network.Remote.MulticastSocket where
+module Network.Remote.MulticastSocket
+  ( MulticastSocket
+  , MulticastSocketManager
+  , newManager
+  , defaultMulticastSocket
+  , getWithInterface
+  ) where
 
 import Network.Multicast
 import Network.Socket
 
-import Control.Concurrent.MVar
 import Data.Foldable (forM_)
+import Data.IORef
 import qualified Data.Map as M
 
 data MulticastSocket = MulticastSocket
@@ -14,19 +20,19 @@ data MulticastSocket = MulticastSocket
   }
 
 data MulticastSocketManager = Mgr
-  { groupAddr :: (HostName, PortNumber)
-  , coreM :: IO (MVar (M.Map HostName MulticastSocket))
+  { _groupAddr :: (HostName, PortNumber)
+  , _core :: IORef (M.Map HostName MulticastSocket)
   }
 
 -- | Create a multicast socket manager with group INET addr
 newManager :: HostName -> PortNumber -> IO MulticastSocketManager
-newManager host port = return $ Mgr (host, port) (newMVar M.empty)
+newManager host port = newIORef M.empty >>= \core -> return $ Mgr (host, port) core
 
 -- | Create a multicast socket containing sender an receiver
 multicastOn ::
-     HostName -- Group host
-  -> PortNumber -- Group port
-  -> Maybe HostName -- Network interface
+     HostName -- ^ Group host
+  -> PortNumber -- ^ Group port
+  -> Maybe HostName -- ^ Network interface
   -> IO MulticastSocket
 multicastOn host port m = do
   (s, addr) <- multicastSender host port
@@ -41,6 +47,5 @@ defaultMulticastSocket (Mgr (host, port) _) = multicastOn host port Nothing
 getWithInterface :: MulticastSocketManager -> HostName -> IO MulticastSocket
 getWithInterface (Mgr (host, port) var) net = do
   result <- multicastOn host port (Just net)
-  mCore <- var
-  modifyMVar_ mCore $ \core -> return $ M.insert net result core
+  modifyIORef var $ M.insert net result
   return result
