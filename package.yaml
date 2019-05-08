@@ -20,6 +20,7 @@ dependencies:
 - bytestring
 - text-latin1
 - containers
+- time
 
 library:
   source-dirs: src
