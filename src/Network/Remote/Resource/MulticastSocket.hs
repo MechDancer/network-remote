@@ -1,4 +1,4 @@
-module Network.Remote.MulticastSocket
+module Network.Remote.Resource.MulticastSocket
   ( MulticastSocket
   , MulticastSocketManager
   , newManager

@@ -1,10 +1,10 @@
-module Network.Remote.ZigZag
+module Network.Remote.Protocol.ZigZag
   ( ZigZagList
   , showZigZagCodeHex
   , encode
   , decode
-  , encodeM
-  , decodeM
+  , encodeN
+  , decodeN
   ) where
 
 import Data.Bits
@@ -93,8 +93,8 @@ encode = encodeUnsigned . signedToUnsigned
 decode :: ZigZagList -> Integer
 decode = unsignedToSigned . unZigZagUIntegerFromWordListWC
 
-encodeM :: [Integer] -> ZigZagList
-encodeM = foldr (\int list -> encode int ++ list) []
+encodeN :: [Integer] -> ZigZagList
+encodeN = foldr (\int list -> encode int ++ list) []
 
-decodeM :: ZigZagList -> [Integer]
-decodeM = fmap unsignedToSigned . unZigZagMultipleUInteger
+decodeN :: ZigZagList -> [Integer]
+decodeN = fmap unsignedToSigned . unZigZagMultipleUInteger
