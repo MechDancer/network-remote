@@ -12,6 +12,8 @@ import Network.Socket
 import Data.Foldable (forM_)
 import Data.IORef
 import qualified Data.Map as M
+import Network.Info
+import Network.Remote.Resource.Networks
 
 data MulticastSocket = MulticastSocket
   { receiver :: !Socket
@@ -21,7 +23,7 @@ data MulticastSocket = MulticastSocket
 
 data MulticastSocketManager = Mgr
   { _groupAddr :: (HostName, PortNumber)
-  , _core :: IORef (M.Map HostName MulticastSocket)
+  , _core :: IORef (M.Map NetworkInterface MulticastSocket)
   }
 
 -- | Create a multicast socket manager with group INET addr
@@ -32,19 +34,18 @@ newManager host port = newIORef M.empty >>= \core -> return $ Mgr (host, port) c
 multicastOn ::
      HostName -- ^ Group host
   -> PortNumber -- ^ Group port
-  -> Maybe HostName -- ^ Network interface
+  -> Maybe NetworkInterface -- ^ Network interface (Optional)
   -> IO MulticastSocket
 multicastOn host port m = do
   (s, addr) <- multicastSender host port
   r <- multicastReceiver host port
-  forM_ m (setInterface s)
-  forM_ m (setInterface r)
+  forM_ m (setInterface s . show . ipv4)
   return $ MulticastSocket s r addr
 
 defaultMulticastSocket :: MulticastSocketManager -> IO MulticastSocket
 defaultMulticastSocket (Mgr (host, port) _) = multicastOn host port Nothing
 
-getWithInterface :: MulticastSocketManager -> HostName -> IO MulticastSocket
+getWithInterface :: MulticastSocketManager -> NetworkInterface -> IO MulticastSocket
 getWithInterface (Mgr (host, port) var) net = do
   result <- multicastOn host port (Just net)
   modifyIORef var $ M.insert net result

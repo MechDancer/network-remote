@@ -1,15 +1,46 @@
 module Network.Remote.Resource.Networks where
 
-import Data.Char(toLower)
+import Control.Monad (forM)
+import Data.Char (toLower)
+import Data.IORef
+import Network.Info
+import System.IO.Unsafe (unsafePerformIO)
 
-notLoopBack = (/= "127") . take 3
+{-# NOINLINE networks #-}
+networks :: IORef [NetworkInterface]
+networks = unsafePerformIO $ newIORef scan
 
-notDocker = not . inStr "docker" . map toLower
+scan :: IO [NetworkInterface]
+scan = do
+  interfaces <- getNetworkInterfaces
+  result <- newIORef []
+  zipped <- newIORef []
+  writeIORef result $ do
+    f <- [isMono, notDocker, notLoopBack, notVmware]
+    list <- forM interfaces $ \x -> return $ f x
+    return $ and list
+  do r <- readIORef result
+     writeIORef zipped $ zip interfaces r
+  v <- readIORef zipped
+  return $ map fst $ filter ((== True) . snd) v
 
-notVmware = not . inStr "vmware" . map toLower
+-------------------------------------------------------------------
+instance Eq NetworkInterface where
+  a == b = ipv4 a == ipv4 b
 
+instance Ord NetworkInterface where
+  a `compare` b = ipv4 a `compare` ipv4 b
 
+-------------------------------------------------------------------
+notLoopBack = (/= "127") . take 3 . show . ipv4
 
+notDocker = not . inStr "docker" . map toLower . name
+
+notVmware = not . inStr "VMware" . name
+
+isMono = (\x -> x > 1 && x < 223) . read . take 3 . show . ipv4
+
+-------------------------------------------------------------------
 split _ [] = []
 split det s =
   let (a, b) = span (/= det) s
