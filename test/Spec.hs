@@ -1,9 +1,10 @@
-import Network.Remote.ZigZag
+{-# LANGUAGE OverloadedStrings #-}
 
-import Data.IORef
-import qualified Data.Map as M
-import Network.Remote.MulticastSocket
+import Network.Remote.Protocol.ZigZag
+
+import Control.Monad
 import Network.Remote
+<<<<<<< HEAD
 import Data.Time.Clock.System
 import Network.Multicast
 import Network.Socket
@@ -17,3 +18,13 @@ main = do
   forever $ do
     (msg, addr) <- B.recvFrom sock 1024
     print (msg, addr)
+=======
+import Network.Remote.Resource.Networks
+
+main :: IO ()
+main = do
+  scan>>=print
+  currentTimeSeconds >>= print
+  print $ decodeN . encodeN $ [-1, 2, 3]
+  return ()
+>>>>>>> 72ccd35c5ba9d9d8abff5a75586f174e66aaf4f0

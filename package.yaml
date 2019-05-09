@@ -21,7 +21,11 @@ dependencies:
 - text-latin1
 - containers
 - time
+<<<<<<< HEAD
 - io-streams
+=======
+- network-info
+>>>>>>> 72ccd35c5ba9d9d8abff5a75586f174e66aaf4f0
 
 library:
   source-dirs: src

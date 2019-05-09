@@ -1,4 +1,4 @@
-module Network.Remote.Group where
+module Network.Remote.Resource.Group where
 
 import Data.IORef
 import Data.Int (Int64)

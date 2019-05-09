@@ -7,4 +7,4 @@ import Data.Word (Word32)
 type Name = String
 
 currentTimeSeconds :: IO Int64
-currentTimeSeconds = return 2333 -- TODO
+currentTimeSeconds = systemSeconds <$> getSystemTime
