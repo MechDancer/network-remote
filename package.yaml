@@ -21,6 +21,7 @@ dependencies:
 - text-latin1
 - containers
 - time
+- io-streams
 
 library:
   source-dirs: src
