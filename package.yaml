@@ -21,6 +21,7 @@ dependencies:
 - text-latin1
 - containers
 - time
+- network-info
 
 library:
   source-dirs: src
