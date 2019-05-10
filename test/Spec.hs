@@ -1,7 +1,6 @@
-import Network.Remote.Protocol.ZigZag
-
-import Control.Monad
-import Network.Remote
+import Network.Remote (currentTimeSeconds)
+import Network.Remote.Protocol.ZigZag (decodeN, encodeN)
+import Network.Remote.Resource.Networks (scan)
 
 main :: IO ()
 main = do

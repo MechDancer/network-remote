@@ -10,10 +10,10 @@ import Network.Multicast
 import Network.Socket
 
 import Data.Foldable (forM_)
-import Data.IORef
+import Data.IORef (IORef, modifyIORef, newIORef)
 import qualified Data.Map as M
 import Network.Info
-import Network.Remote.Resource.Networks
+import Network.Remote.Resource.Networks ()
 
 data MulticastSocket = MulticastSocket
   { receiver :: !Socket

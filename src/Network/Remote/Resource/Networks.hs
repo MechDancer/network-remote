@@ -2,13 +2,13 @@ module Network.Remote.Resource.Networks where
 
 import Control.Monad (forM)
 import Data.Char (toLower)
-import Data.IORef
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Network.Info
 import System.IO.Unsafe (unsafePerformIO)
 
 {-# NOINLINE networks #-}
 networks :: IORef [NetworkInterface]
-networks = unsafePerformIO $ scan >>= newIORef
+networks = unsafePerformIO $ newIORef []
 
 scan :: IO [NetworkInterface]
 scan = do

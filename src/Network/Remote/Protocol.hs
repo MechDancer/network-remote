@@ -53,12 +53,11 @@ instance Command TcpCmd where
 instance Command CommonCmd where
   packID _ = 127
 
-data RemotePacket =
-  RPacket
-    { sender :: Name
-    , command :: Word8
-    , payload :: ByteString
-    }
+data RemotePacket = RPacket
+  { sender :: Name
+  , command :: Word8
+  , payload :: ByteString
+  }
 
 -- | Build a `RemotePacket`
 remotePacket :: (Command m) => Name -> m -> ByteString -> RemotePacket
