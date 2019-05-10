@@ -1,5 +1,5 @@
 module Network.Remote.Resource.MulticastSocket
-  ( MulticastSocket
+  ( MulticastSocket(..)
   , MulticastSocketManager
   , newManager
   , defaultMulticastSocket

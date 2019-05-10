@@ -8,7 +8,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 {-# NOINLINE networks #-}
 networks :: IORef [NetworkInterface]
-networks = unsafePerformIO $ newIORef scan
+networks = unsafePerformIO $ scan >>= newIORef
 
 scan :: IO [NetworkInterface]
 scan = do
@@ -21,8 +21,8 @@ scan = do
     return $ and list
   do r <- readIORef result
      writeIORef zipped $ zip interfaces r
-  v <- readIORef zipped
-  return $ map fst $ filter ((== True) . snd) v
+  readIORef zipped >>= writeIORef networks . map fst . filter ((== True) . snd)
+  readIORef networks
 
 -------------------------------------------------------------------
 instance Eq NetworkInterface where

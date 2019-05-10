@@ -1,14 +1,18 @@
-module Network.Remote.SocketStream
-()where
+module Network.Remote.SocketStream where
 
-import System.IO.Streams.Network
-import Network.Remote.MulticastSocket
+import Data.ByteString (ByteString)
+import Network.Remote.Resource.MulticastSocket
 import qualified Network.Socket.ByteString as B
+import System.IO.Streams
+import System.IO.Streams.Network
 
-data SocketStream = SocketStream {inputStream::(InputStream ByteString),outputStream::(OutputStream ByteString)}
+data SocketStream = SocketStream
+  { inputStream :: InputStream ByteString
+  , outputStream :: OutputStream ByteString
+  }
 
 multicastSocketToStream :: MulticastSocket -> IO SocketStream
-multicastSocketToStream sock = do
-  (input , _)<- socketToStream $ receiver sock
-  (_, output)<- socketToStream $ sender sock
+multicastSocketToStream MulticastSocket {sender = sender, receiver = receiver} = do
+  (input, _) <- socketToStreams receiver
+  (_, output) <- socketToStreams sender
   return $ SocketStream input output
