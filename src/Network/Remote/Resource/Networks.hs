@@ -1,20 +1,12 @@
 module Network.Remote.Resource.Networks where
 
 import Control.Monad (forM)
-import Data.Char (toLower)
-import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import Network.Info
 import Data.Bits
--- import System.IO.Unsafe (unsafePerformIO)
+import Data.Char (toLower)
+import Network.Info
 
--- {-# NOINLINE networks #-}
--- networks :: IORef [NetworkInterface]
--- networks = unsafePerformIO $ newIORef []
-
-scan :: IO [NetworkInterface]
-scan = do
-  interfaces <- getNetworkInterfaces
-  return $ filter (\inface->foldr (\f acc->f inface && acc) True [isMono, notDocker, notLoopBack, notVmware] ) interfaces
+scanNetwork :: IO [NetworkInterface]
+scanNetwork = filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware]) <$> getNetworkInterfaces
 
 -------------------------------------------------------------------
 instance Eq NetworkInterface where
@@ -24,17 +16,16 @@ instance Ord NetworkInterface where
   a `compare` b = ipv4 a `compare` ipv4 b
 
 -------------------------------------------------------------------
-
-notLoopBack :: NetworkInterface->Bool
+notLoopBack :: NetworkInterface -> Bool
 notLoopBack = (/= "127") . take 3 . show . ipv4
 
-notDocker :: NetworkInterface->Bool
+notDocker :: NetworkInterface -> Bool
 notDocker = not . inStr "docker" . map toLower . name
 
-notVmware :: NetworkInterface->Bool
-notVmware = not . inStr "VMware" . name
+notVMware :: NetworkInterface -> Bool
+notVMware = not . inStr "VMware" . name
 
-isMono :: NetworkInterface->Bool
+isMono :: NetworkInterface -> Bool
 isMono = (\x -> x > 1 && x < 223) . (\(IPv4 a) -> shift a (negate 24)) . ipv4
 
 -------------------------------------------------------------------

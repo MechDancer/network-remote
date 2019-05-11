@@ -1,4 +1,4 @@
-module Network.Remote.SocketStream where
+module Network.Remote.Resource.SocketStream where
 
 import Data.ByteString (ByteString)
 import Network.Remote.Resource.MulticastSocket
