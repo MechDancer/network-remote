@@ -23,6 +23,7 @@ dependencies:
 - time
 - io-streams
 - network-info
+- array
 
 library:
   source-dirs: src
