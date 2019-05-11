@@ -4,25 +4,17 @@ import Control.Monad (forM)
 import Data.Char (toLower)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Network.Info
-import System.IO.Unsafe (unsafePerformIO)
+import Data.Bits
+-- import System.IO.Unsafe (unsafePerformIO)
 
-{-# NOINLINE networks #-}
-networks :: IORef [NetworkInterface]
-networks = unsafePerformIO $ newIORef []
+-- {-# NOINLINE networks #-}
+-- networks :: IORef [NetworkInterface]
+-- networks = unsafePerformIO $ newIORef []
 
 scan :: IO [NetworkInterface]
 scan = do
   interfaces <- getNetworkInterfaces
-  result <- newIORef []
-  zipped <- newIORef []
-  writeIORef result $ do
-    f <- [isMono, notDocker, notLoopBack, notVmware]
-    list <- forM interfaces $ \x -> return $ f x
-    return $ and list
-  do r <- readIORef result
-     writeIORef zipped $ zip interfaces r
-  readIORef zipped >>= writeIORef networks . map fst . filter ((== True) . snd)
-  readIORef networks
+  return $ filter (\inface->foldr (\f acc->f inface && acc) True [isMono, notDocker, notLoopBack, notVmware] ) interfaces
 
 -------------------------------------------------------------------
 instance Eq NetworkInterface where
@@ -32,13 +24,18 @@ instance Ord NetworkInterface where
   a `compare` b = ipv4 a `compare` ipv4 b
 
 -------------------------------------------------------------------
+
+notLoopBack :: NetworkInterface->Bool
 notLoopBack = (/= "127") . take 3 . show . ipv4
 
+notDocker :: NetworkInterface->Bool
 notDocker = not . inStr "docker" . map toLower . name
 
+notVmware :: NetworkInterface->Bool
 notVmware = not . inStr "VMware" . name
 
-isMono = (\x -> x > 1 && x < 223) . read . take 3 . show . ipv4
+isMono :: NetworkInterface->Bool
+isMono = (\x -> x > 1 && x < 223) . (\(IPv4 a) -> shift a (negate 24)) . ipv4
 
 -------------------------------------------------------------------
 split _ [] = []
