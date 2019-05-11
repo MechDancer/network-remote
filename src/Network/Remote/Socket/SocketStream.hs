@@ -1,4 +1,4 @@
-module Network.Remote.Resource.SocketStream
+module Network.Remote.Socket.SocketStream
   ( SocketStream(..)
   , multicastSocketToStream
   ) where
@@ -6,7 +6,7 @@ module Network.Remote.Resource.SocketStream
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Internal as S
-import Network.Remote.Resource.MulticastSocket
+import Network.Remote.Socket.MulticastSocket
 import Network.Socket (SockAddr)
 import qualified Network.Socket.ByteString as B
 import qualified System.IO.Streams as Streams
