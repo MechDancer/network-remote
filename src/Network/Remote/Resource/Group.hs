@@ -16,7 +16,7 @@ newtype Group = Gp
   }
 
 newGroup :: IO Group
-newGroup = newIORef M.empty >>= \core -> return $ Gp core
+newGroup = Gp <$> newIORef M.empty
 
 detect :: Group -> Name -> IO (Name, Int64)
 detect group name = do
