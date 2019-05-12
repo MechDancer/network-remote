@@ -20,6 +20,8 @@ import Data.IORef
 import Data.Traversable (forM, sequence)
 import Data.Word
 import Prelude hiding (read)
+import qualified Network.Remote.Protocol.ZigZag as Z
+import Data.Bits
 
 data SimpleInputStream = SimpleInputStream
   { _coreIn :: IOUArray Int Word8
@@ -48,7 +50,9 @@ read (SimpleInputStream core ptr) = do
   p <- readIORef ptr
   len <- arrayLength core
   if p < 0 || p >= len
-    then return 0
+    then do
+      print "read out of the range"
+      return 0
     else do
       ru <- readArray core p
       writeIORef ptr $ p + 1
@@ -61,6 +65,20 @@ readN (SimpleInputStream core ptr) k = do
     p<- readIORef ptr
     writeIORef ptr (p+1)
     readArray core p)
+
+readZigZag :: SimpleInputStream -> IO Integer
+readZigZag (SimpleInputStream core ptr) = do
+  ls <- getZigList
+  return $ Z.decode ls
+  where
+    getZigList = do
+      a <- read (SimpleInputStream core ptr)
+      if (a .&. 0x80) /= 0x80
+        then return [a]
+        else do
+          rest <- getZigList
+          return $ a : rest
+
 
 look :: SimpleInputStream -> IO Word8
 look (SimpleInputStream core ptr) = readIORef ptr >>= readArray core
