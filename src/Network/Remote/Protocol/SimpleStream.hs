@@ -9,20 +9,29 @@ module Network.Remote.Protocol.SimpleStream
 import Data.Array.IO
 import Data.Array.MArray
 import Data.IORef
-import Data.Traversable (forM)
+import Data.Traversable (forM,sequence)
 import Data.Word
 import Prelude hiding (read)
+import Control.Monad (forM_)
 
 data SimpleInputStream = SimpleInputStream
-  { _core :: IOUArray Int Word8
-  , ptr :: IORef Int
+  { _coreIn :: IOUArray Int Word8
+  , ptrIn :: IORef Int
   }
+
+
 
 sInputStream :: [Word8] -> IO SimpleInputStream
 sInputStream l = do
   arr <- newListArray (0, length l) l
   p <- newIORef 0
   return $ SimpleInputStream arr p
+
+availableIn :: SimpleInputStream -> IO Int
+availableIn (SimpleInputStream core ptr) = do
+  p <- readIORef ptr
+  len <- arrayLength core
+  return (len - p)
 
 arrayLength :: IOUArray Int Word8 -> IO Int
 arrayLength arr = do
@@ -51,3 +60,51 @@ lookRest (SimpleInputStream core ptr) = do
   p <- readIORef ptr
   len <- arrayLength core
   forM [p .. len - 1] (readArray core)
+
+data SimpleOutputStream = SimpleOutputStream
+  { _coreOut :: IOUArray Int Word8
+  , ptrOut :: IORef Int
+  }
+
+sOutputStream :: Int -> IO SimpleOutputStream
+sOutputStream len = do
+  arr <- newArray_ (0,len-1)
+  ptr <- newIORef 0
+  return (SimpleOutputStream arr ptr)
+
+availableOut :: SimpleOutputStream -> IO Int
+availableOut (SimpleOutputStream core ptr) = do
+  p <- readIORef ptr
+  len <- arrayLength core
+  return (len - p)
+
+write :: SimpleOutputStream -> Word8 -> IO ()
+write (SimpleOutputStream core ptr) a=do
+  p <- readIORef ptr
+  len <- arrayLength core
+  if p < 0 || p >= len
+    then return ()
+    else do
+      writeArray core p a
+      writeIORef ptr (p+1)
+
+-- if the the list's length greater than available num,it will discard the rest of the list
+writeList :: SimpleOutputStream -> [Word8] -> IO ()
+writeList (SimpleOutputStream core ptr) ax =do
+  ava <- availableOut (SimpleOutputStream core ptr)
+  forM_ (take ava ax) (\a->do
+    p <- readIORef ptr
+    writeArray core p a
+    writeIORef ptr (p+1)
+    )
+
+writeInputToOutput :: SimpleInputStream -> SimpleOutputStream -> Int -> IO ()
+writeInputToOutput (SimpleInputStream coreIn ptrIn) (SimpleOutputStream coreOut ptrOut) len = do
+  avaOut <- availableOut (SimpleOutputStream coreOut ptrOut)
+  avaIn <- availableIn (SimpleInputStream coreIn ptrIn)
+  sequence_ . take (len `min` avaIn `min` avaOut) $ repeat (do
+    pIn <-readIORef ptrIn
+    pOut <-readIORef ptrOut
+    readArray coreIn pIn >>= (writeArray coreOut pOut )
+    writeIORef ptrIn (pIn+1)
+    writeIORef ptrOut (pOut+1))
