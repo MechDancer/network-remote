@@ -54,6 +54,14 @@ read (SimpleInputStream core ptr) = do
       writeIORef ptr $ p + 1
       return ru
 
+readN :: SimpleInputStream -> Int -> IO [Word8]
+readN (SimpleInputStream core ptr) k = do
+  ava<- availableIn (SimpleInputStream core ptr)
+  sequence . take (min ava k) $ repeat (do
+    p<- readIORef ptr
+    writeIORef ptr (p+1)
+    readArray core p)
+
 look :: SimpleInputStream -> IO Word8
 look (SimpleInputStream core ptr) = readIORef ptr >>= readArray core
 
