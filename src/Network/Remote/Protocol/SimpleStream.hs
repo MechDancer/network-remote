@@ -3,6 +3,8 @@ module Network.Remote.Protocol.SimpleStream
   , sInputStream
   , availableIn
   , read
+  , readN
+  , readZigZag
   , look
   , lookRest
   , SimpleOutputStream
@@ -14,14 +16,14 @@ module Network.Remote.Protocol.SimpleStream
   ) where
 
 import Control.Monad (forM_)
-import Data.Array.IO
-import Data.Array.MArray
-import Data.IORef
-import Data.Traversable (forM, sequence)
-import Data.Word
-import Prelude hiding (read)
-import qualified Network.Remote.Protocol.ZigZag as Z
+import Data.Array.IO (IOUArray)
+import Data.Array.MArray (getBounds, newArray_, newListArray, readArray, writeArray)
 import Data.Bits
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.Traversable (forM, sequence)
+import Data.Word (Word8)
+import qualified Network.Remote.Protocol.ZigZag as Z
+import Prelude hiding (read)
 
 data SimpleInputStream = SimpleInputStream
   { _coreIn :: IOUArray Int Word8
@@ -32,18 +34,18 @@ sInputStream :: [Word8] -> IO SimpleInputStream
 sInputStream l = do
   arr <- newListArray (0, length l) l
   p <- newIORef 0
-  return $ SimpleInputStream arr p
+  return $! SimpleInputStream arr p
 
 availableIn :: SimpleInputStream -> IO Int
 availableIn (SimpleInputStream core ptr) = do
   p <- readIORef ptr
   len <- arrayLength core
-  return $ len - p
+  return $! len - p
 
 arrayLength :: IOUArray Int Word8 -> IO Int
 arrayLength arr = do
   (a, b) <- getBounds arr
-  return $ b - a + 1
+  return $! b - a + 1
 
 read :: SimpleInputStream -> IO Word8
 read (SimpleInputStream core ptr) = do
@@ -56,29 +58,27 @@ read (SimpleInputStream core ptr) = do
     else do
       ru <- readArray core p
       writeIORef ptr $ p + 1
-      return ru
+      return $! ru
 
 readN :: SimpleInputStream -> Int -> IO [Word8]
 readN (SimpleInputStream core ptr) k = do
-  ava<- availableIn (SimpleInputStream core ptr)
-  sequence . take (min ava k) $ repeat (do
-    p<- readIORef ptr
-    writeIORef ptr (p+1)
-    readArray core p)
+  ava <- availableIn (SimpleInputStream core ptr)
+  sequence . take (min ava k) $!
+    repeat $ do
+      p <- readIORef ptr
+      writeIORef ptr $ p + 1
+      readArray core p
 
 readZigZag :: SimpleInputStream -> IO Integer
-readZigZag (SimpleInputStream core ptr) = do
-  ls <- getZigList
-  return $ Z.decode ls
+readZigZag stream = Z.decode <$> getZigList
   where
     getZigList = do
-      a <- read (SimpleInputStream core ptr)
+      a <- read stream
       if (a .&. 0x80) /= 0x80
         then return [a]
         else do
           rest <- getZigList
-          return $ a : rest
-
+          return $! a : rest
 
 look :: SimpleInputStream -> IO Word8
 look (SimpleInputStream core ptr) = readIORef ptr >>= readArray core
@@ -90,7 +90,7 @@ lookRest :: SimpleInputStream -> IO [Word8]
 lookRest (SimpleInputStream core ptr) = do
   p <- readIORef ptr
   len <- arrayLength core
-  forM [p .. len - 1] $ readArray core
+  forM [p .. len - 1] $! readArray core
 
 -------------------------------------------------------------------
 data SimpleOutputStream = SimpleOutputStream
@@ -102,13 +102,13 @@ sOutputStream :: Int -> IO SimpleOutputStream
 sOutputStream len = do
   arr <- newArray_ (0, len - 1)
   ptr <- newIORef 0
-  return $ SimpleOutputStream arr ptr
+  return $! SimpleOutputStream arr ptr
 
 availableOut :: SimpleOutputStream -> IO Int
 availableOut (SimpleOutputStream core ptr) = do
   p <- readIORef ptr
   len <- arrayLength core
-  return $ len - p
+  return $! len - p
 
 write :: SimpleOutputStream -> Word8 -> IO ()
 write (SimpleOutputStream core ptr) a = do
@@ -118,25 +118,25 @@ write (SimpleOutputStream core ptr) a = do
     then return ()
     else do
       writeArray core p a
-      writeIORef ptr $ p + 1
+      writeIORef ptr $! p + 1
 
 -- if the the list's length greater than available num,it will discard the rest of the list
 writeList :: SimpleOutputStream -> [Word8] -> IO ()
-writeList (SimpleOutputStream core ptr) ax = do
-  ava <- availableOut $ SimpleOutputStream core ptr
+writeList o@(SimpleOutputStream core ptr) ax = do
+  ava <- availableOut o
   forM_ (take ava ax) $ \a -> do
     p <- readIORef ptr
     writeArray core p a
-    writeIORef ptr $ p + 1
+    writeIORef ptr $! p + 1
 
 writeToOutputStream :: SimpleInputStream -> SimpleOutputStream -> Int -> IO ()
-writeToOutputStream (SimpleInputStream coreIn ptrIn) (SimpleOutputStream coreOut ptrOut) len = do
-  avaOut <- availableOut $ SimpleOutputStream coreOut ptrOut
-  avaIn <- availableIn $ SimpleInputStream coreIn ptrIn
+writeToOutputStream i@(SimpleInputStream coreIn ptrIn) o@(SimpleOutputStream coreOut ptrOut) len = do
+  avaOut <- availableOut o
+  avaIn <- availableIn i
   sequence_ . take (len `min` avaIn `min` avaOut) $
     repeat $ do
       pIn <- readIORef ptrIn
       pOut <- readIORef ptrOut
       readArray coreIn pIn >>= writeArray coreOut pOut
-      writeIORef ptrIn $ pIn + 1
-      writeIORef ptrOut $ pOut + 1
+      writeIORef ptrIn $! pIn + 1
+      writeIORef ptrOut $! pOut + 1
