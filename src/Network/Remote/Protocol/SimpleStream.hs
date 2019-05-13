@@ -16,7 +16,7 @@ module Network.Remote.Protocol.SimpleStream
   ) where
 
 import Control.Monad (forM_)
-import Data.Array.IO (IOUArray)
+import Data.Array.IO (IOUArray,getElems)
 import Data.Array.MArray (getBounds, newArray_, newListArray, readArray, writeArray)
 import Data.Bits
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
@@ -140,3 +140,9 @@ writeToOutputStream i@(SimpleInputStream coreIn ptrIn) o@(SimpleOutputStream cor
       readArray coreIn pIn >>= writeArray coreOut pOut
       writeIORef ptrIn $! pIn + 1
       writeIORef ptrOut $! pOut + 1
+
+outputStreamToList :: SimpleInputStream -> IO [Word8]
+outputStreamToList (SimpleInputStream core ptr)= do
+  p<-readIORef ptr
+  xs <- getElems core
+  return $ take (p+1) xs
