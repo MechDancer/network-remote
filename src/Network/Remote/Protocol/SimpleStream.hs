@@ -64,7 +64,7 @@ read (SimpleInputStream core ptr) = do
 readN :: SimpleInputStream -> Int -> IO [Word8]
 readN (SimpleInputStream core ptr) k = do
   ava <- availableIn (SimpleInputStream core ptr)
-  sequence . take (min (ava-1) k) $!
+  sequence . take (min ava k) $!
     repeat $ do
       p <- readIORef ptr
       writeIORef ptr $ p + 1
