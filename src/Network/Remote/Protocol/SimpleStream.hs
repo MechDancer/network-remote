@@ -1,6 +1,6 @@
 module Network.Remote.Protocol.SimpleStream
   ( SimpleInputStream
-  , sInputStream
+  , fromList
   , availableIn
   , read
   , readN
@@ -8,15 +8,16 @@ module Network.Remote.Protocol.SimpleStream
   , look
   , lookRest
   , SimpleOutputStream
-  , sOutputStream
+  , empty
   , availableOut
   , write
   , writeList
   , writeToOutputStream
+  , toList
   ) where
 
 import Control.Monad (forM_)
-import Data.Array.IO (IOUArray,getElems)
+import Data.Array.IO (IOUArray, getElems)
 import Data.Array.MArray (getBounds, newArray_, newListArray, readArray, writeArray)
 import Data.Bits
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
@@ -30,8 +31,8 @@ data SimpleInputStream = SimpleInputStream
   , ptrIn :: IORef Int
   }
 
-sInputStream :: [Word8] -> IO SimpleInputStream
-sInputStream l = do
+fromList :: [Word8] -> IO SimpleInputStream
+fromList l = do
   arr <- newListArray (0, length l) l
   p <- newIORef 0
   return $! SimpleInputStream arr p
@@ -63,7 +64,7 @@ read (SimpleInputStream core ptr) = do
 readN :: SimpleInputStream -> Int -> IO [Word8]
 readN (SimpleInputStream core ptr) k = do
   ava <- availableIn (SimpleInputStream core ptr)
-  sequence . take (min ava k) $!
+  sequence . take (min (ava-1) k) $!
     repeat $ do
       p <- readIORef ptr
       writeIORef ptr $ p + 1
@@ -98,8 +99,8 @@ data SimpleOutputStream = SimpleOutputStream
   , ptrOut :: IORef Int
   }
 
-sOutputStream :: Int -> IO SimpleOutputStream
-sOutputStream len = do
+empty :: Int -> IO SimpleOutputStream
+empty len = do
   arr <- newArray_ (0, len - 1)
   ptr <- newIORef 0
   return $! SimpleOutputStream arr ptr
@@ -141,8 +142,8 @@ writeToOutputStream i@(SimpleInputStream coreIn ptrIn) o@(SimpleOutputStream cor
       writeIORef ptrIn $! pIn + 1
       writeIORef ptrOut $! pOut + 1
 
-outputStreamToList :: SimpleInputStream -> IO [Word8]
-outputStreamToList (SimpleInputStream core ptr)= do
-  p<-readIORef ptr
+toList :: SimpleOutputStream -> IO [Word8]
+toList (SimpleOutputStream core ptr) = do
+  p <- readIORef ptr
   xs <- getElems core
-  return $ take (p+1) xs
+  return $ take (p + 1) xs
