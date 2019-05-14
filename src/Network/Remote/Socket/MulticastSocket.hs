@@ -23,7 +23,7 @@ data MulticastSocket = MulticastSocket
 
 data MulticastSocketManager = Mgr
   { _groupAddr :: (HostName, PortNumber)
-  , _core :: IORef (M.Map NetworkInterface MulticastSocket)
+  , _core :: IORef (M.Map NetworkInterface MulticastSocket) -- TODO use mutable array
   }
 
 -- | Create a multicast socket manager with group INET addr

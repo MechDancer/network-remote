@@ -24,6 +24,7 @@ dependencies:
 - io-streams
 - network-info
 - array
+- mtl
 
 library:
   source-dirs: src
