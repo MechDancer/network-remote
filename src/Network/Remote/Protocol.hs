@@ -3,7 +3,8 @@ module Network.Remote.Protocol where
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Data.Word (Word8)
-import Network.Remote (Name)
+
+type Name = String
 
 data CommonCmd =
   CommonCmd

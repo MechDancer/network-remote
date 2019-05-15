@@ -10,7 +10,7 @@ import Data.Foldable (forM_)
 import Data.Maybe (isNothing)
 import Network.Remote.Protocol
 import qualified Network.Remote.Protocol.SimpleStream as S
-import Network.Remote.Protocol.SimpleStream.ByteString
+import qualified Network.Remote.Protocol.SimpleStream.ByteString as S
 import Network.Remote.Socket.MulticastSocket
 import qualified Network.Socket.ByteString as B
 import qualified System.IO.Streams as Streams
@@ -32,7 +32,7 @@ broadcast (BroadcasterConfig m size manager) cmd payload =
     else do
       stream <- S.empty size
       case m of
-        (Just name) -> writeEnd stream name
+        (Just name) -> S.writeEnd stream name
         Nothing -> return ()
       S.writeList stream $ B.unpack payload
       list <- S.toList stream

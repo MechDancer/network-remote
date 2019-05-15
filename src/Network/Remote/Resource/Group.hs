@@ -9,11 +9,13 @@ module Network.Remote.Resource.Group
 import Data.IORef
 import Data.Int (Int64)
 import qualified Data.Map as M
-import Network.Remote (Name, currentTimeSeconds)
+import Network.Remote (currentTimeSeconds)
+import Network.Remote.Protocol (Name)
 
-newtype Group = Gp
-  { _core :: IORef (M.Map String Int64)
-  }
+newtype Group =
+  Gp
+    { _core :: IORef (M.Map String Int64)
+    }
 
 newGroup :: IO Group
 newGroup = Gp <$> newIORef M.empty

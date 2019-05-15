@@ -8,6 +8,9 @@ import Network.Remote.Protocol.SimpleStream (SimpleInputStream, SimpleOutputStre
 import qualified Network.Remote.Protocol.SimpleStream as S
 import qualified Network.Remote.Protocol.ZigZag as ZigZag
 
+fromByteString :: ByteString -> IO SimpleInputStream
+fromByteString = S.fromList . B.unpack
+
 writeWithLength :: SimpleOutputStream -> ByteString -> IO ()
 writeWithLength o pack = do
   S.writeList o $ ZigZag.encode . toInteger . B.length $ pack

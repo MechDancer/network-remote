@@ -2,7 +2,7 @@ module Network.Remote.Resource.Address where
 
 import Control.Concurrent.MVar (MVar, modifyMVar_, newMVar, readMVar)
 import qualified Data.Map as M
-import Network.Remote (Name)
+import Network.Remote.Protocol (Name)
 import Network.Socket (HostAddress, PortNumber, SockAddr, SockAddr(SockAddrInet), tupleToHostAddress)
 
 newtype Addresses = Ad
