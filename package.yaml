@@ -26,6 +26,7 @@ dependencies:
 - array
 - hashtables
 - hashable
+- mtl
 
 library:
   source-dirs: src

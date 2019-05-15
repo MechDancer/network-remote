@@ -1,20 +1,17 @@
 module Network.Remote.Socket.MulticastBroadcaster
-    (
-    ) where
+  (
+  ) where
 
-import Network.Multicast
-import Network.Socket
+import Control.Monad.Reader
+import Data.ByteString
+import Network.Remote.Protocol
 import Network.Remote.Socket.MulticastSocket
-import Data.IORef
 
-data MulticastBroadcaster = MulticastBroadcaster {
-  name ::String,
-  size :: Int,
-  socketsManager :: IORef MulticastSocketManager
-}
+data MulticastBroadcaster = MulticastBroadcaster
+  { name :: String
+  , size :: Int
+  , socketsManager :: MulticastSocketManager
+  }
 
--- encode :: (Command a)=>String
---   ->a
---   ->[Word8]
---   ->[ByteString]
--- encode name cmd payload=if (length name)+1+(length payload)
+broadcast :: (Command a) => a -> ByteString -> ReaderT MulticastBroadcaster IO ()
+broadcast = undefined
