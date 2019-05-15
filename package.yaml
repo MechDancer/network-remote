@@ -24,6 +24,8 @@ dependencies:
 - io-streams
 - network-info
 - array
+- hashtables
+- hashable
 
 library:
   source-dirs: src

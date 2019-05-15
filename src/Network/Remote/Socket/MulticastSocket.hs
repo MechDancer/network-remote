@@ -8,12 +8,15 @@ module Network.Remote.Socket.MulticastSocket
 
 import Network.Multicast
 import Network.Socket
+import qualified Data.HashTable.IO as H
 
 import Data.Foldable (forM_)
 import Data.IORef (IORef, modifyIORef, newIORef)
 import qualified Data.Map as M
 import Network.Info
 import Network.Remote.Resource.Networks ()
+
+type HashTable k v = H.BasicHashTable k v
 
 data MulticastSocket = MulticastSocket
   { receiver :: !Socket
@@ -23,12 +26,12 @@ data MulticastSocket = MulticastSocket
 
 data MulticastSocketManager = Mgr
   { _groupAddr :: (HostName, PortNumber)
-  , _core :: IORef (M.Map NetworkInterface MulticastSocket)
+  , _core :: HashTable NetworkInterface MulticastSocket
   }
 
 -- | Create a multicast socket manager with group INET addr
 newManager :: HostName -> PortNumber -> IO MulticastSocketManager
-newManager host port = newIORef M.empty >>= \core -> return $ Mgr (host, port) core
+newManager host port = H.new >>= \core -> return $ Mgr (host, port) core
 
 -- | Create a multicast socket containing sender an receiver
 multicastOn ::
@@ -48,5 +51,5 @@ defaultMulticastSocket (Mgr (host, port) _) = multicastOn host port Nothing
 getWithInterface :: MulticastSocketManager -> NetworkInterface -> IO MulticastSocket
 getWithInterface (Mgr (host, port) var) net = do
   result <- multicastOn host port (Just net)
-  modifyIORef var $ M.insert net result
+  H.insert var net result
   return result
