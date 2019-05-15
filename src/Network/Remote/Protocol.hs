@@ -1,4 +1,13 @@
-module Network.Remote.Protocol where
+module Network.Remote.Protocol
+  ( CommonCmd(..)
+  , UdpCmd(..)
+  , TcpCmd(..)
+  , Command(..)
+  , RemotePacket(..)
+  , remotePacket
+  , (=.=)
+  , Name
+  ) where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -60,13 +69,12 @@ instance Command CommonCmd where
 (=.=) :: (Command a, Command b) => a -> b -> Bool
 (=.=) a b = packID a == packID b
 
-data RemotePacket =
-  RPacket
-    { sender :: Name
-    , command :: Word8
-    , payload :: ByteString
-    }
+data RemotePacket = RemotePacket
+  { sender :: Name
+  , command :: Word8
+  , payload :: ByteString
+  }
 
 -- | Build a `RemotePacket`
 remotePacket :: (Command m) => Name -> m -> ByteString -> RemotePacket
-remotePacket name cmd = RPacket name (packID cmd)
+remotePacket name cmd = RemotePacket name (packID cmd)
