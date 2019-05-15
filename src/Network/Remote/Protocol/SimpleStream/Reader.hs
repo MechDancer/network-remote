@@ -31,3 +31,19 @@ skip  k = ReaderT $ liftIO . flip S.skip k
 
 lookRest :: (MonadIO m)=>ReaderT SimpleInputStream m [Word8]
 lookRest = ReaderT $ liftIO. S.lookRest
+
+withOutputStreamDo :: SimpleOutputStream -> ReaderT SimpleOutputStream m a -> m a
+withOutputStreamDo = flip runReaderT
+
+
+availableOut :: (MonadIO m)=> ReaderT SimpleOutputStream m Int
+availableOut = ReaderT $ liftIO . S.availableOut
+
+write :: (MonadIO m)=> Word8 -> ReaderT SimpleOutputStream m ()
+write k = ReaderT $ liftIO . flip S.write k
+
+writeList :: (MonadIO m)=> [Word8] -> ReaderT SimpleOutputStream m ()
+writeList l = ReaderT $ liftIO . flip S.writeList l
+
+toList :: (MonadIO m)=> ReaderT SimpleOutputStream m [Word8]
+toList = ReaderT $ liftIO . S.toList
