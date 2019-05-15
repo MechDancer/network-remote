@@ -27,6 +27,7 @@ dependencies:
 - hashtables
 - hashable
 - mtl
+- transformers
 
 library:
   source-dirs: src

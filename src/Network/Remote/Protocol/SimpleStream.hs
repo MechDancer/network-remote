@@ -6,7 +6,8 @@ module Network.Remote.Protocol.SimpleStream
   , readN
   , readZigZag
   , look
-  , lookRest
+  , lookRest,
+  skip
   , SimpleOutputStream
   , empty
   , availableOut
