@@ -34,7 +34,7 @@ data SimpleInputStream = SimpleInputStream
 
 fromList :: [Word8] -> IO SimpleInputStream
 fromList l = do
-  arr <- newListArray (0, (length l) - 1) l
+  arr <- newListArray (0, length l - 1) l
   p <- newIORef 0
   return $! SimpleInputStream arr p
 

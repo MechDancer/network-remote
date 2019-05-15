@@ -7,6 +7,7 @@ import Network.Remote (Name)
 
 data CommonCmd =
   CommonCmd
+  deriving (Eq)
 
 data UdpCmd
   = YELL_ASK
@@ -23,7 +24,9 @@ data TcpCmd
   | Blocking
   deriving (Eq)
 
-class Command a where
+class (Eq a) =>
+      Command a
+  where
   packID :: a -> Word8
   -- ^ Get id of the command
   lead :: a -> ByteString -> ByteString
@@ -53,11 +56,15 @@ instance Command TcpCmd where
 instance Command CommonCmd where
   packID _ = 127
 
-data RemotePacket = RPacket
-  { sender :: Name
-  , command :: Word8
-  , payload :: ByteString
-  }
+(=.=) :: (Command a, Command b) => a -> b -> Bool
+(=.=) a b = packID a == packID b
+
+data RemotePacket =
+  RPacket
+    { sender :: Name
+    , command :: Word8
+    , payload :: ByteString
+    }
 
 -- | Build a `RemotePacket`
 remotePacket :: (Command m) => Name -> m -> ByteString -> RemotePacket
