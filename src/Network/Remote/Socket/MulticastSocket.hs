@@ -9,6 +9,8 @@ module Network.Remote.Socket.MulticastSocket
   , getWithInterface
   ) where
 
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Trans.Reader (ReaderT(..))
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Internal as S
@@ -17,33 +19,30 @@ import qualified Data.HashTable.IO as H
 import qualified Data.Map as M
 import Network.Info
 import Network.Multicast
+import Network.Remote.Resource.Networks () -- ^ import the instance of `Eq`
 import Network.Socket
 import qualified Network.Socket.ByteString as B
 import qualified System.IO.Streams as Streams
 import System.IO.Streams (InputStream, OutputStream)
-import Network.Remote.Resource.Networks() -- ^ import the instance of `Eq`
 
 type HashTable k v = H.BasicHashTable k v
 
 -------------------------------------------------------------------
-data MulticastSocket =
-  MulticastSocket
-    { receiver :: !Socket
-    , sender :: !Socket
-    , address :: !SockAddr
-    }
+data MulticastSocket = MulticastSocket
+  { receiver :: !Socket
+  , sender :: !Socket
+  , address :: !SockAddr
+  }
 
-data SocketStream =
-  SocketStream
-    { inputStream :: InputStream (ByteString, SockAddr)
-    , outputStream :: OutputStream ByteString
-    }
+data SocketStream = SocketStream
+  { inputStream :: InputStream (ByteString, SockAddr)
+  , outputStream :: OutputStream ByteString
+  }
 
-data MulticastSocketManager =
-  Mgr
-    { _groupAddr :: (HostName, PortNumber)
-    , _core :: HashTable NetworkInterface SocketStream
-    }
+data MulticastSocketManager = Mgr
+  { _groupAddr :: (HostName, PortNumber)
+  , _core :: HashTable NetworkInterface SocketStream
+  }
 
 -------------------------------------------------------------------
 multicastSocketToStream :: MulticastSocket -> IO SocketStream
@@ -75,8 +74,8 @@ newManager :: HostName -> PortNumber -> IO MulticastSocketManager
 newManager host port = H.new >>= \core -> return $ Mgr (host, port) core
 
 -- | Get all opened sockets
-openedSockets :: MulticastSocketManager -> IO [(NetworkInterface, SocketStream)]
-openedSockets = H.toList . _core
+openedSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [(NetworkInterface, SocketStream)]
+openedSockets = ReaderT $ liftIO . H.toList . _core
 
 -- | Create a multicast socket containing sender an receiver
 multicastOn ::
@@ -90,11 +89,13 @@ multicastOn host port m = do
   forM_ m (setInterface s . show . ipv4)
   multicastSocketToStream $ MulticastSocket s r addr
 
-defaultMulticastSocket :: MulticastSocketManager -> IO SocketStream
-defaultMulticastSocket (Mgr (host, port) _) = multicastOn host port Nothing
+defaultMulticastSocket :: (MonadIO m) => ReaderT MulticastSocketManager m SocketStream
+defaultMulticastSocket = ReaderT $ \(Mgr (host, port) _) -> liftIO $ multicastOn host port Nothing
 
-getWithInterface :: MulticastSocketManager -> NetworkInterface -> IO SocketStream
-getWithInterface (Mgr (host, port) var) net = do
-  result <- multicastOn host port (Just net)
-  H.insert var net result
-  return result
+getWithInterface :: (MonadIO m) => NetworkInterface -> ReaderT MulticastSocketManager m SocketStream
+getWithInterface net =
+  ReaderT $ \(Mgr (host, port) var) ->
+    liftIO $ do
+      result <- multicastOn host port (Just net)
+      H.insert var net result
+      return result
