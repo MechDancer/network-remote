@@ -57,9 +57,10 @@ runReceiver :: ReceiverConfig -> [MulticastListener] -> IO (Maybe RemotePacket)
 runReceiver (ReceiverConfig m size addresses manager) listeners = do
   defaultIn <- inputStream <$> defaultMulticastSocket manager
   mPacket <- Streams.read defaultIn
-  case mPacket of
-    Nothing -> return Nothing
-    Just (bs, addr) -> do
+  if isNothing mPacket then
+    return Nothing
+    else do
+      let Just (bs, addr) = m
       i <- S.fromByteString bs
       sender <- S.readEnd i
       if m == Just sender
@@ -69,7 +70,7 @@ runReceiver (ReceiverConfig m size addresses manager) listeners = do
           rest <- S.lookRest i
           insertSockAddr addresses sender addr
               -- TODO open the socket of network interface with matched address
-          mapM_ (`process` packet) filtered
-          where filtered = filter (\l -> null (interest l) || cmd `elem` interest l) listeners
-                packet = RemotePacket sender cmd (B.pack rest)
+          let filtered = filter (\l -> null (interest l) || cmd `elem` interest l) listeners
+              packet = RemotePacket sender cmd (B.pack rest)
+              in mapM_ (`process` packet) filtered
           return $ Just (RemotePacket sender cmd (B.pack rest))
