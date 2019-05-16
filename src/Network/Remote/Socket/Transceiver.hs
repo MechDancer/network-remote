@@ -4,6 +4,7 @@ module Network.Remote.Socket.Transceiver
   , broadcast
   ) where
 
+import Control.Monad.Trans.Reader (runReaderT)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Data.Foldable (forM_)
@@ -39,7 +40,7 @@ broadcast (BroadcasterConfig m size manager) cmd payload =
         Nothing -> return ()
       S.writeList stream $ B.unpack payload
       list <- S.toList stream
-      socks <- openedSockets manager
+      socks <- runReaderT openedSockets manager
       forM_ socks (Streams.write (Just $ B.pack list) . outputStream . snd)
 
 -------------------------------------------------------------------
@@ -55,12 +56,12 @@ defaultReceiverConfig name (Just size) = ReceiverConfig Nothing 65536
 
 runReceiver :: ReceiverConfig -> [MulticastListener] -> IO (Maybe RemotePacket)
 runReceiver (ReceiverConfig m size addresses manager) listeners = do
-  defaultIn <- inputStream <$> defaultMulticastSocket manager
+  defaultIn <- inputStream <$> runReaderT defaultMulticastSocket manager
   mPacket <- Streams.read defaultIn
-  if isNothing mPacket then
-    return Nothing
+  if isNothing mPacket
+    then return Nothing
     else do
-      let Just (bs, addr) = m
+      let Just (bs, addr) = mPacket
       i <- S.fromByteString bs
       sender <- S.readEnd i
       if m == Just sender
@@ -68,9 +69,9 @@ runReceiver (ReceiverConfig m size addresses manager) listeners = do
         else do
           cmd <- S.read i
           rest <- S.lookRest i
-          insertSockAddr addresses sender addr
+          runReaderT (insertSockAddr sender addr) addresses
               -- TODO open the socket of network interface with matched address
           let filtered = filter (\l -> null (interest l) || cmd `elem` interest l) listeners
               packet = RemotePacket sender cmd (B.pack rest)
-              in mapM_ (`process` packet) filtered
-          return $ Just (RemotePacket sender cmd (B.pack rest))
+           in mapM_ (`process` packet) filtered
+          return . Just $ RemotePacket sender cmd (B.pack rest)
