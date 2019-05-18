@@ -1,5 +1,5 @@
 module Network.Remote.Protocol.SimpleStream
-  ( SimpleInputStream
+  ( SimpleInputStream()
   , fromList
   , availableIn
   , read
@@ -8,7 +8,7 @@ module Network.Remote.Protocol.SimpleStream
   , look
   , lookRest,
   skip
-  , SimpleOutputStream
+  , SimpleOutputStream()
   , empty
   , availableOut
   , write

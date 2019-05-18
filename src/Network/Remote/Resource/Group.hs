@@ -1,13 +1,14 @@
 module Network.Remote.Resource.Group
-  ( Group
+  ( Group()
   , newGroup
+  , withGroup
   , detect
   , get
   , getByTimeout
   ) where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Reader (ReaderT(..))
+import Control.Monad.Trans.Reader (ReaderT(..), runReaderT)
 import Data.IORef
 import Data.Int (Int64)
 import qualified Data.Map as M
@@ -20,6 +21,9 @@ newtype Group = Gp
 
 newGroup :: IO Group
 newGroup = Gp <$> newIORef M.empty
+
+withGroup :: Group -> ReaderT Group m a -> m a
+withGroup = flip runReaderT
 
 detect :: (MonadIO m) => Name -> ReaderT Group m (Name, Int64)
 detect name =

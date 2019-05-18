@@ -4,13 +4,14 @@ module Network.Remote.Socket.MulticastSocket
   , multicastSocketToStream
   , MulticastSocketManager
   , newManager
+  , withManager
   , openedSockets
   , defaultMulticastSocket
   , getWithInterface
   ) where
 
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Reader (ReaderT(..))
+import Control.Monad.Trans.Reader (ReaderT(..), runReaderT)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Internal as S
@@ -72,6 +73,10 @@ socketToStreamsInternalO socket addr = Streams.makeOutputStream output
 -- | Create a multicast socket manager with group INET addr
 newManager :: HostName -> PortNumber -> IO MulticastSocketManager
 newManager host port = H.new >>= \core -> return $ Mgr (host, port) core
+
+-- | Simple way to access `ReaderT`
+withManager :: MulticastSocketManager -> ReaderT MulticastSocketManager m a -> m a
+withManager = flip runReaderT
 
 -- | Get all opened sockets
 openedSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [(NetworkInterface, SocketStream)]
