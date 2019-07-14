@@ -7,11 +7,11 @@ module Network.Remote.Protocol.ZigZag
   , decodeN
   ) where
 
-import Data.Bits
+import           Data.Bits
 import qualified Data.ByteString as B
-import Data.Word
-import Numeric
-import Text.Ascii
+import           Data.Word
+import           Numeric
+import           Text.Ascii
 
 type ZigZagList = [Word8]
 

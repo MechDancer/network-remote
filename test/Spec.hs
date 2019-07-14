@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Control.Monad (mapM_)
-import Control.Monad.Trans.Reader (runReaderT)
-import qualified Data.ByteString.Char8 as B
-import Data.Foldable (foldl1)
-import Network.Multicast
-import Network.Remote.Resource.Networks (scanNetwork)
-import Network.Remote.Socket.MulticastSocket
-import Network.Socket
-import qualified System.IO.Streams as S
+import           Control.Monad                         (mapM_)
+import           Control.Monad.Trans.Reader            (runReaderT)
+import qualified Data.ByteString.Char8                 as B
+import           Data.Foldable                         (foldl1)
+import           Network.Multicast
+import           Network.Remote.Resource.Networks      (scanNetwork)
+import           Network.Remote.Socket.MulticastSocket
+import           Network.Socket
+import qualified System.IO.Streams                     as S
 
 main :: IO ()
 main = do

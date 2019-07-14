@@ -10,40 +10,43 @@ module Network.Remote.Socket.MulticastSocket
   , getWithInterface
   ) where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Reader (ReaderT(..), runReaderT)
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as S
-import qualified Data.ByteString.Internal as S
-import Data.Foldable (forM_)
-import qualified Data.HashTable.IO as H
-import qualified Data.Map as M
-import Network.Info
-import Network.Multicast
-import Network.Remote.Resource.Networks () -- ^ import the instance of `Eq`
-import Network.Socket
-import qualified Network.Socket.ByteString as B
-import qualified System.IO.Streams as Streams
-import System.IO.Streams (InputStream, OutputStream)
+import           Control.Monad.IO.Class           (MonadIO, liftIO)
+import           Control.Monad.Trans.Reader       (ReaderT (..), runReaderT)
+import           Data.ByteString                  (ByteString)
+import qualified Data.ByteString.Char8            as S
+import qualified Data.ByteString.Internal         as S
+import           Data.Foldable                    (forM_)
+import qualified Data.HashTable.IO                as H
+import qualified Data.Map                         as M
+import           Network.Info
+import           Network.Multicast
+import           Network.Remote.Resource.Networks ()
+import           Network.Socket
+import qualified Network.Socket.ByteString        as B
+import           System.IO.Streams                (InputStream, OutputStream)
+import qualified System.IO.Streams                as Streams
 
 type HashTable k v = H.BasicHashTable k v
 
 -------------------------------------------------------------------
-data MulticastSocket = MulticastSocket
-  { receiver :: !Socket
-  , sender :: !Socket
-  , address :: !SockAddr
-  }
+data MulticastSocket =
+  MulticastSocket
+    { receiver :: !Socket
+    , sender   :: !Socket
+    , address  :: !SockAddr
+    }
 
-data SocketStream = SocketStream
-  { inputStream :: InputStream (ByteString, SockAddr)
-  , outputStream :: OutputStream ByteString
-  }
+data SocketStream =
+  SocketStream
+    { inputStream  :: InputStream (ByteString, SockAddr)
+    , outputStream :: OutputStream ByteString
+    }
 
-data MulticastSocketManager = Mgr
-  { _groupAddr :: (HostName, PortNumber)
-  , _core :: HashTable NetworkInterface SocketStream
-  }
+data MulticastSocketManager =
+  Mgr
+    { _groupAddr :: (HostName, PortNumber)
+    , _core      :: HashTable NetworkInterface SocketStream
+    }
 
 -------------------------------------------------------------------
 multicastSocketToStream :: MulticastSocket -> IO SocketStream

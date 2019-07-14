@@ -4,27 +4,29 @@ module Network.Remote.Socket.Receiver
   , runReceiver
   ) where
 
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as B
-import Data.Foldable (forM_)
-import Data.Maybe (fromJust, isNothing)
-import Network.Remote
-import Network.Remote.Protocol
-import qualified Network.Remote.Protocol.SimpleStream as S
+import           Data.ByteString                                 (ByteString)
+import qualified Data.ByteString                                 as B
+import           Data.Foldable                                   (forM_)
+import           Data.Maybe                                      (fromJust,
+                                                                  isNothing)
+import           Network.Remote
+import           Network.Remote.Protocol
+import qualified Network.Remote.Protocol.SimpleStream            as S
 import qualified Network.Remote.Protocol.SimpleStream.ByteString as S
-import Network.Remote.Resource.Address
-import Network.Remote.Socket.MulticastSocket
-import qualified Network.Socket.ByteString as B
-import qualified System.IO.Streams as Streams
+import           Network.Remote.Resource.Address
+import           Network.Remote.Socket.MulticastSocket
+import qualified Network.Socket.ByteString                       as B
+import qualified System.IO.Streams                               as Streams
 
-data ReceiverConfig = ReceiverConfig
-  { _name :: Maybe String
-  , _size :: Int
-  , _addresses :: Addresses
-  , _socketManager :: MulticastSocketManager
-  }
+data ReceiverConfig =
+  ReceiverConfig
+    { _name          :: Maybe String
+    , _size          :: Int
+    , _addresses     :: Addresses
+    , _socketManager :: MulticastSocketManager
+    }
 
-defaultReceiverConfig name Nothing = ReceiverConfig name 65536
+defaultReceiverConfig name Nothing     = ReceiverConfig name 65536
 defaultReceiverConfig name (Just size) = ReceiverConfig Nothing 65536
 
 runReceiver :: ReceiverConfig -> [MulticastListener] -> IO (Maybe RemotePacket)

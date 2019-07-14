@@ -7,17 +7,18 @@ module Network.Remote.Resource.Group
   , getByTimeout
   ) where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Reader (ReaderT(..), runReaderT)
-import Data.IORef
-import Data.Int (Int64)
-import qualified Data.Map as M
-import Network.Remote (currentTimeSeconds)
-import Network.Remote.Protocol (Name)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Control.Monad.Trans.Reader (ReaderT (..), runReaderT)
+import           Data.Int                   (Int64)
+import           Data.IORef
+import qualified Data.Map                   as M
+import           Network.Remote             (currentTimeSeconds)
+import           Network.Remote.Protocol    (Name)
 
-newtype Group = Gp
-  { _core :: IORef (M.Map String Int64)
-  }
+newtype Group =
+  Gp
+    { _core :: IORef (M.Map String Int64)
+    }
 
 newGroup :: IO Group
 newGroup = Gp <$> newIORef M.empty

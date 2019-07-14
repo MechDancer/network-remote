@@ -1,13 +1,14 @@
 module Network.Remote.Resource.Networks where
 
-import Control.Monad (forM)
-import Data.Bits
-import Data.Char (toLower)
-import Network.Info
-import Data.Hashable
+import           Control.Monad (forM)
+import           Data.Bits
+import           Data.Char     (toLower)
+import           Data.Hashable
+import           Network.Info
 
 scanNetwork :: IO [NetworkInterface]
-scanNetwork = filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware]) <$> getNetworkInterfaces
+scanNetwork =
+  filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware]) <$> getNetworkInterfaces
 
 -------------------------------------------------------------------
 instance Eq NetworkInterface where
@@ -17,7 +18,9 @@ instance Ord NetworkInterface where
   a `compare` b = ipv4 a `compare` ipv4 b
 
 instance Hashable NetworkInterface where
-  hashWithSalt a net = let (IPv4 w) = ipv4 net in hashWithSalt a w
+  hashWithSalt a net =
+    let (IPv4 w) = ipv4 net
+     in hashWithSalt a w
 
 -------------------------------------------------------------------
 notLoopBack :: NetworkInterface -> Bool

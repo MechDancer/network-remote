@@ -13,12 +13,13 @@ module Network.Remote.Protocol.SimpleStream.Reader
   , toList
   ) where
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Reader (ReaderT(..), runReaderT)
-import Data.Word (Word8)
+import           Control.Monad.IO.Class               (MonadIO, liftIO)
+import           Control.Monad.Trans.Reader           (ReaderT (..), runReaderT)
+import           Data.Word                            (Word8)
+import           Network.Remote.Protocol.SimpleStream (SimpleInputStream,
+                                                       SimpleOutputStream)
 import qualified Network.Remote.Protocol.SimpleStream as S
-import Network.Remote.Protocol.SimpleStream (SimpleInputStream, SimpleOutputStream)
-import Prelude hiding (read)
+import           Prelude                              hiding (read)
 
 withInputStream :: SimpleInputStream -> ReaderT SimpleInputStream m a -> m a
 withInputStream = flip runReaderT
