@@ -85,7 +85,7 @@ withManager = flip runReaderT
 openedSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [(NetworkInterface, SocketStream)]
 openedSockets = ReaderT $ liftIO . H.toList . _core
 
--- | Create a multicast socket containing sender an receiver
+-- | Create a multicast socket containing a sender and a receiver
 multicastOn ::
      HostName -- ^ Group host
   -> PortNumber -- ^ Group port
@@ -97,9 +97,11 @@ multicastOn host port m = do
   forM_ m (setInterface s . show . ipv4)
   multicastSocketToStream $ MulticastSocket s r addr
 
+-- | Get a multicast socket without network interface
 defaultMulticastSocket :: (MonadIO m) => ReaderT MulticastSocketManager m SocketStream
 defaultMulticastSocket = ReaderT $ \(Mgr (host, port) _) -> liftIO $ multicastOn host port Nothing
 
+-- | Get a multicast socket with a specific network interface
 getWithInterface :: (MonadIO m) => NetworkInterface -> ReaderT MulticastSocketManager m SocketStream
 getWithInterface net =
   ReaderT $ \(Mgr (host, port) var) ->

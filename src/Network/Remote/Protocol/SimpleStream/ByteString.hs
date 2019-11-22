@@ -1,8 +1,8 @@
 module Network.Remote.Protocol.SimpleStream.ByteString where
 
+import           Codec.Binary.UTF8.String
 import           Data.ByteString                      (ByteString)
 import qualified Data.ByteString                      as B
-import qualified Data.ByteString.Char8                as BC
 import           Data.Word                            (Word8)
 import           Network.Remote.Protocol.SimpleStream (SimpleInputStream,
                                                        SimpleOutputStream)
@@ -25,11 +25,11 @@ readWithLength i = fmap B.pack $ S.readZigZag i >>= S.readN i . fromIntegral
 
 -- | Write a `String` into `SimpleInputStream` and write `0` to the end
 writeEnd :: SimpleOutputStream -> String -> IO ()
-writeEnd o s = S.writeList o (B.unpack $ BC.pack s) >> S.write o 0
+writeEnd o s = S.writeList o (encode s) >> S.write o 0
 
 -- | Read and create a `String` from `SimpleInputStream` until meet `0`
 readEnd :: SimpleInputStream -> IO String
-readEnd i = BC.unpack . B.pack <$> read' []
+readEnd i = decode <$> read' []
   where
     read' :: [Word8] -> IO [Word8]
     read' r = do

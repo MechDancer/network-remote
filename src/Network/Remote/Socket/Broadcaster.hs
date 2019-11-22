@@ -25,6 +25,10 @@ data BroadcasterConfig =
 defaultBroadcasterConfig name Nothing     = BroadcasterConfig name 0x4000
 defaultBroadcasterConfig name (Just size) = BroadcasterConfig Nothing size
 
+instance Show BroadcasterConfig where
+  show (BroadcasterConfig name _ _) = "BroadcasterConfig[" ++ show name ++ "]"
+
+-- | Broadcast a payload
 broadcast :: (Command a) => BroadcasterConfig -> a -> ByteString -> IO ()
 broadcast (BroadcasterConfig m size manager) cmd payload =
   if isNothing m && (cmd =.= YELL_ACK || cmd =.= ADDRESS_ACK)
@@ -32,9 +36,14 @@ broadcast (BroadcasterConfig m size manager) cmd payload =
     else do
       stream <- S.empty size
       case m of
+        -- Write name
         (Just name) -> S.writeEnd stream name
         Nothing     -> return ()
+      -- Write cmd
+      S.write stream $ packID cmd
+      -- Write payload
       S.writeList stream $ B.unpack payload
       list <- S.toList stream
       socks <- withManager manager openedSockets
-      forM_ socks (Streams.write (Just $ B.pack list) . outputStream . snd)
+      let package = Just $ B.pack list
+      forM_ socks (Streams.write package . outputStream . snd)

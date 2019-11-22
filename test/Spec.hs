@@ -1,21 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import           Control.Monad                         (mapM_)
+import           Codec.Binary.UTF8.String
+import           Control.Monad                         (forM_, mapM_)
 import           Control.Monad.Trans.Reader            (runReaderT)
 import qualified Data.ByteString.Char8                 as B
 import           Data.Foldable                         (foldl1)
+import           Network.Info                          (name)
 import           Network.Multicast
+import           Network.Remote.Protocol               (CommonCmd (..))
 import           Network.Remote.Resource.Networks      (scanNetwork)
+import           Network.Remote.Socket.Broadcaster     (broadcast,
+                                                        defaultBroadcasterConfig)
 import           Network.Remote.Socket.MulticastSocket
 import           Network.Socket
 import qualified System.IO.Streams                     as S
 
 main :: IO ()
 main = do
-  manager <- newManager "233.233.233.233" 23333
-  r <- scanNetwork >>= mapM (\n -> runReaderT (getWithInterface n) manager)
-  foldl1 (>>) $ do
-    n <- [1 .. 100]
-    (SocketStream i o) <- r
-    return $ S.write (pure . B.pack $ show n) o
-  print "GG"
+  -- Create manager
+  manager <- newManager "233.33.33.33" 23333
+  -- Choose wifi network interface
+  interface <- head . filter (\n -> name n == "Wi-Fi") <$> scanNetwork
+  -- Open socket manually
+  _ <- withManager manager $ getWithInterface interface
+  let config = defaultBroadcasterConfig (Just "Haskell") Nothing manager
+  forM_ [1 ..] $ \_ -> broadcast config CommonCmd (B.pack . encodeString $ "Hello, Haskell")

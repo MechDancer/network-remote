@@ -28,6 +28,7 @@ dependencies:
 - hashable
 - mtl
 - transformers
+- utf8-string
 
 library:
   source-dirs: src
