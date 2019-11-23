@@ -36,14 +36,13 @@ isMono :: NetworkInterface -> Bool
 isMono = (\x -> x > 1 && x < 223) . (\(IPv4 a) -> shift a (negate 24)) . ipv4
 
 -------------------------------------------------------------------
-split _ [] = []
-split det s =
-  let (a, b) = span (/= det) s
-   in a :
-      split
-        det
-        (if b /= []
-           then tail b
-           else [])
+split det = wordsWhen (== det)
+
+wordsWhen :: (Char -> Bool) -> String -> [String]
+wordsWhen p s =
+  case dropWhile p s of
+    "" -> []
+    s' -> w : wordsWhen p s''
+      where (w, s'') = break p s'
 
 inStr a s = foldr (\b bcc -> (a == take (length a) b) || bcc) False (scanr (:) [] s)

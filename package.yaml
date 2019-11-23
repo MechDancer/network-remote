@@ -9,6 +9,7 @@ copyright:           "2019 MechDancer"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- cbits/mask.h
 
 description:         Please see the README on GitHub at <https://github.com/MechDancer/network-remote#readme>
 
@@ -32,6 +33,15 @@ dependencies:
 
 library:
   source-dirs: src
+  include-dirs: cbits
+  cc-options: -Wall -std=c99
+  when:
+    - condition: os(windows)
+      then:
+        c-sources: cbits/mask-windows.c
+        extra-libraries: iphlpapi
+      else:
+        c-sources: cbits/mask-unix.c
 
 tests:
   network-remote-test:

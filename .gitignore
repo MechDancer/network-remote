@@ -4,5 +4,5 @@ network-remote.cabal
 .idea
 *.iml
 .DS_Store
-.out
+.out/
 *.lock

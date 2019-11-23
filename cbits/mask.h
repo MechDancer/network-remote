@@ -1,0 +1,1 @@
+char *c_get_subnet_mask(const char *interface_name);

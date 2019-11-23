@@ -5,10 +5,11 @@ import           Control.Monad                         (forM_, mapM_)
 import           Control.Monad.Trans.Reader            (runReaderT)
 import qualified Data.ByteString.Char8                 as B
 import           Data.Foldable                         (foldl1)
-import           Network.Info                          (name)
+import           Network.Info                          (ipv4, name)
+import           Network.Mask
 import           Network.Multicast
 import           Network.Remote.Protocol               (CommonCmd (..))
-import           Network.Remote.Resource.Networks      (scanNetwork)
+import           Network.Remote.Resource.Networks      (inStr, scanNetwork)
 import           Network.Remote.Socket.Broadcaster     (broadcast,
                                                         defaultBroadcasterConfig)
 import           Network.Remote.Socket.MulticastSocket
@@ -17,11 +18,13 @@ import qualified System.IO.Streams                     as S
 
 main :: IO ()
 main = do
-  -- Create manager
   manager <- newManager "233.33.33.33" 23333
-  -- Choose wifi network interface
-  interface <- head . filter (\n -> name n == "Wi-Fi") <$> scanNetwork
+  interface <- head . filter (\n -> inStr "192." (show $ ipv4 n)) <$> scanNetwork
+  putStr "Open socket on "
+  print interface
+  putStr "Subnet mask: "
+  getSubnetMask interface >>= print
   -- Open socket manually
   _ <- withManager manager $ getWithInterface interface
   let config = defaultBroadcasterConfig (Just "Haskell") Nothing manager
-  forM_ [1 ..] $ \_ -> broadcast config CommonCmd (B.pack . encodeString $ "Hello, Haskell")
+  forM_ [1] $ \_ -> broadcast config CommonCmd (B.pack . encodeString $ "Hello, Haskell")
