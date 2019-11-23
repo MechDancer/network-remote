@@ -1,14 +1,18 @@
 module Network.Remote.Resource.Networks where
 
-import           Control.Monad (forM)
+import           Control.Monad    (forM)
 import           Data.Bits
-import           Data.Char     (toLower)
+import           Data.Char        (toLower)
 import           Data.Hashable
 import           Network.Info
+import           System.IO.Unsafe (unsafePerformIO)
 
 scanNetwork :: IO [NetworkInterface]
 scanNetwork =
   filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware]) <$> getNetworkInterfaces
+
+{-# NOINLINE cachedNetwork #-}
+cachedNetwork = unsafePerformIO scanNetwork
 
 -------------------------------------------------------------------
 instance Eq NetworkInterface where
