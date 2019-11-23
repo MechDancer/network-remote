@@ -1,4 +1,12 @@
-module Network.Remote where
+module Network.Remote
+  ( currentTimeSeconds
+  , MulticastListener()
+  , multicastListener
+  , interest
+  , process
+  , split
+  , inStr
+  ) where
 
 import           Data.Int                (Int64)
 import           Data.Time.Clock.System
@@ -16,3 +24,14 @@ data MulticastListener =
 
 multicastListener :: (Command a) => [a] -> (RemotePacket -> IO ()) -> MulticastListener
 multicastListener = ML . map packID
+
+split det = wordsWhen (== det)
+
+wordsWhen :: (Char -> Bool) -> String -> [String]
+wordsWhen p s =
+  case dropWhile p s of
+    "" -> []
+    s' -> w : wordsWhen p s''
+      where (w, s'') = break p s'
+
+inStr a s = foldr (\b bcc -> (a == take (length a) b) || bcc) False (scanr (:) [] s)

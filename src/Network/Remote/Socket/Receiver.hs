@@ -17,8 +17,7 @@ import           Network.Remote.Protocol
 import qualified Network.Remote.Protocol.SimpleStream            as S
 import qualified Network.Remote.Protocol.SimpleStream.ByteString as S
 import           Network.Remote.Resource.Address
-import           Network.Remote.Resource.Networks                (cachedNetwork,
-                                                                  split)
+import           Network.Remote.Resource.Networks                (cachedNetwork)
 import           Network.Remote.Socket.MulticastSocket
 import           Network.Socket                                  (SockAddr)
 import qualified Network.Socket.ByteString                       as B
@@ -34,6 +33,7 @@ data ReceiverConfig =
 
 defaultReceiverConfig name Nothing = ReceiverConfig name 65536
 
+-- | Run multicast receiver
 runReceiver :: ReceiverConfig -> [MulticastListener] -> IO (Maybe RemotePacket)
 runReceiver (ReceiverConfig m size addresses manager) listeners = do
   defaultIn <- inputStream <$> withManager manager defaultMulticastSocket
@@ -43,20 +43,25 @@ runReceiver (ReceiverConfig m size addresses manager) listeners = do
     else do
       let Just (bs, addr) = mPacket
       i <- S.fromByteString bs
+      -- Read name
       sender <- S.readEnd i
-      -- Packet sent by myself
+      -- Ignore packet sent by myself
       if m == Just sender
         then return Nothing
+          -- Read cmd
         else do
           cmd <- S.read i
+          -- Read payload
           rest <- S.lookRest i
+          -- Update addresses
           withAddresses addresses $ insertSockAddr sender addr
-          -- TODO open the corresponding socket of network interface with matched address
-          let t = (`F.find` cachedNetwork)
-          let u = (`match` addr)
-          -- TODO apply u to t
+          matched <- mapM (\n -> n `match` addr >>= \r -> return (n, r)) cachedNetwork
+          let correspondingInterface = fst . head $ filter snd matched
+          -- Open the socket
+          withManager manager $ openSocket correspondingInterface
           let filtered = filter (\l -> null (interest l) || cmd `elem` interest l) listeners
               packet = RemotePacket sender cmd (B.pack rest)
+          -- Handle callbacks
           mapM_ (`process` packet) filtered
           return . Just $ packet
 

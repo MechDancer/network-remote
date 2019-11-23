@@ -7,7 +7,7 @@ module Network.Remote.Socket.MulticastSocket
   , withManager
   , openedSockets
   , defaultMulticastSocket
-  , getWithInterface
+  , openSocket
   ) where
 
 import           Control.Monad.IO.Class           (MonadIO, liftIO)
@@ -97,13 +97,13 @@ multicastOn host port m = do
   forM_ m (setInterface s . show . ipv4)
   multicastSocketToStream $ MulticastSocket s r addr
 
--- | Get a multicast socket without network interface
+-- | Get the default multicast socket retrieving all packets
 defaultMulticastSocket :: (MonadIO m) => ReaderT MulticastSocketManager m SocketStream
 defaultMulticastSocket = ReaderT $ \(Mgr (host, port) _) -> liftIO $ multicastOn host port Nothing
 
--- | Get a multicast socket with a specific network interface
-getWithInterface :: (MonadIO m) => NetworkInterface -> ReaderT MulticastSocketManager m SocketStream
-getWithInterface net =
+-- | Get and open a multicast socket with a specific network interface
+openSocket :: (MonadIO m) => NetworkInterface -> ReaderT MulticastSocketManager m SocketStream
+openSocket net =
   ReaderT $ \(Mgr (host, port) var) ->
     liftIO $ do
       result <- multicastOn host port (Just net)

@@ -8,8 +8,9 @@ import           Data.Foldable                         (foldl1)
 import           Network.Info                          (ipv4, name)
 import           Network.Mask
 import           Network.Multicast
+import           Network.Remote                        (inStr)
 import           Network.Remote.Protocol               (CommonCmd (..))
-import           Network.Remote.Resource.Networks      (inStr, scanNetwork)
+import           Network.Remote.Resource.Networks      (scanNetwork)
 import           Network.Remote.Socket.Broadcaster     (broadcast,
                                                         defaultBroadcasterConfig)
 import           Network.Remote.Socket.MulticastSocket
@@ -25,6 +26,6 @@ main = do
   putStr "Subnet mask: "
   getSubnetMask interface >>= print
   -- Open socket manually
-  _ <- withManager manager $ getWithInterface interface
+  _ <- withManager manager $ openSocket interface
   let config = defaultBroadcasterConfig (Just "Haskell") Nothing manager
   forM_ [1] $ \_ -> broadcast config CommonCmd (B.pack . encodeString $ "Hello, Haskell")

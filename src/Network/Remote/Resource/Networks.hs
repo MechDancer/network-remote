@@ -1,16 +1,22 @@
-module Network.Remote.Resource.Networks where
+module Network.Remote.Resource.Networks
+  ( scanNetwork
+  , cachedNetwork
+  ) where
 
 import           Control.Monad    (forM)
 import           Data.Bits
 import           Data.Char        (toLower)
 import           Data.Hashable
 import           Network.Info
+import           Network.Remote   (inStr)
 import           System.IO.Unsafe (unsafePerformIO)
 
+-- | Scan network interfaces right now
 scanNetwork :: IO [NetworkInterface]
 scanNetwork =
   filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware]) <$> getNetworkInterfaces
 
+-- | An unsafe memorize of network interfaces
 {-# NOINLINE cachedNetwork #-}
 cachedNetwork = unsafePerformIO scanNetwork
 
@@ -38,15 +44,3 @@ notVMware = not . inStr "VMware" . name
 
 isMono :: NetworkInterface -> Bool
 isMono = (\x -> x > 1 && x < 223) . (\(IPv4 a) -> shift a (negate 24)) . ipv4
-
--------------------------------------------------------------------
-split det = wordsWhen (== det)
-
-wordsWhen :: (Char -> Bool) -> String -> [String]
-wordsWhen p s =
-  case dropWhile p s of
-    "" -> []
-    s' -> w : wordsWhen p s''
-      where (w, s'') = break p s'
-
-inStr a s = foldr (\b bcc -> (a == take (length a) b) || bcc) False (scanr (:) [] s)
