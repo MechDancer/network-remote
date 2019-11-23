@@ -152,4 +152,5 @@ toList :: SimpleOutputStream -> IO [Word8]
 toList (SimpleOutputStream core ptr) = do
   p <- readIORef ptr
   xs <- getElems core
-  return $ take (p + 1) xs
+  -- TODO: Should be `p + 1` in theory
+  return $ take p xs

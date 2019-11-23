@@ -75,6 +75,7 @@ data RemotePacket =
     , command :: !Word8
     , payload :: !ByteString
     }
+  deriving (Show)
 
 -- | Build a `RemotePacket`
 remotePacket :: (Command m) => Name -> m -> ByteString -> RemotePacket

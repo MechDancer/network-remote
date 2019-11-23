@@ -8,6 +8,7 @@ module Network.Remote.Socket.MulticastSocket
   , openedSockets
   , defaultMulticastSocket
   , openSocket
+  , openAllSockets
   ) where
 
 import           Control.Monad.IO.Class           (MonadIO, liftIO)
@@ -20,7 +21,7 @@ import qualified Data.HashTable.IO                as H
 import qualified Data.Map                         as M
 import           Network.Info
 import           Network.Multicast
-import           Network.Remote.Resource.Networks ()
+import           Network.Remote.Resource.Networks (cachedNetwork)
 import           Network.Socket
 import qualified Network.Socket.ByteString        as B
 import           System.IO.Streams                (InputStream, OutputStream)
@@ -109,3 +110,7 @@ openSocket net =
       result <- multicastOn host port (Just net)
       H.insert var net result
       return result
+
+-- | Open all network interfaces
+openAllSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [SocketStream]
+openAllSockets = mapM openSocket cachedNetwork

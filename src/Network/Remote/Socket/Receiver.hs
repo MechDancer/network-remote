@@ -73,7 +73,8 @@ match interface addr =
     addressStrToInt :: String -> Int
     addressStrToInt s = fromInteger result
       where
-        array = split '.' s
+        -- Drop port
+        array = split '.' $ takeWhile (/= '.') s
         bytes = map read array
         result = foldr (\byte acc -> (acc `shiftL` 8) .|. (byte .&. 0xff)) 0 bytes
     sockAddrToInt :: SockAddr -> Int
