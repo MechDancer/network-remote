@@ -53,3 +53,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - network-remote
+    - parsec
+    - cereal

@@ -1,15 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-import           Codec.Binary.UTF8.String
+import           Codec.Binary.UTF8.String              (encodeString)
 import           Control.Concurrent                    (forkIO, threadDelay)
 import           Control.Monad                         (forever)
-import           Control.Monad.Trans.Reader            (runReaderT)
 import qualified Data.ByteString.Char8                 as B
-import           Data.Foldable                         (foldl1)
-import qualified Debug.Trace                           as T
 import           Network.Info                          (ipv4, name)
-import           Network.Mask
-import           Network.Multicast
+
+--import           Network.Mask
+--import           Network.Multicast
 import           Network.Remote                        (inStr,
                                                         multicastListener)
 import           Network.Remote.Protocol               (CommonCmd (..),
@@ -24,9 +20,10 @@ import           Network.Remote.Socket.Broadcaster     (broadcast,
 import           Network.Remote.Socket.MulticastSocket
 import           Network.Remote.Socket.Receiver        (defaultReceiverConfig,
                                                         runReceiver)
-import           Network.Socket
-import qualified System.IO.Streams                     as S
 
+--import           Network.Socket
+--import           PID
+--import qualified System.IO.Streams                     as S
 main :: IO ()
 main = do
   manager <- newManager "233.33.33.33" 23333
@@ -40,7 +37,9 @@ main = do
       brod = broadcast broadcastConfig CommonCmd (B.pack . encodeString $ "Hello, Haskell")
   forkIO $ forever recv
   forever brod
+
 --do
 --  o <- empty 65535
 --  toList o >>= print
 --  return ()
+--kpParser=string"kp">>
