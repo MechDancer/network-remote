@@ -28,8 +28,8 @@ main :: IO ()
 main = do
   manager <- newManager "233.33.33.33" 23333
   addresses <- newAddresses
-  -- Open all sockets manually
-  withManager manager openAllSockets
+  -- Open all sockets manually | Errors might be aroused sometimes
+--  withManager manager openAllSockets
   let broadcastConfig = defaultBroadcasterConfig (Just "HaskellB") Nothing manager
       receiveConfig = defaultReceiverConfig (Just "HaskellR") Nothing addresses manager
       listener = multicastListener [CommonCmd] print
@@ -37,9 +37,3 @@ main = do
       brod = broadcast broadcastConfig CommonCmd (B.pack . encodeString $ "Hello, Haskell")
   forkIO $ forever recv
   forever brod
-
---do
---  o <- empty 65535
---  toList o >>= print
---  return ()
---kpParser=string"kp">>

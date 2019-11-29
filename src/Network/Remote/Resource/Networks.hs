@@ -14,7 +14,7 @@ import           System.IO.Unsafe (unsafePerformIO)
 -- | Scan network interfaces right now
 scanNetwork :: IO [NetworkInterface]
 scanNetwork =
-  filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware]) <$> getNetworkInterfaces
+  filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware,noNull]) <$> getNetworkInterfaces
 
 -- | An unsafe memorize of network interfaces
 {-# NOINLINE cachedNetwork #-}
@@ -44,3 +44,6 @@ notVMware = not . inStr "VMware" . name
 
 isMono :: NetworkInterface -> Bool
 isMono = (\x -> x > 1 && x < 223) . (\(IPv4 a) -> shift a (negate 24)) . ipv4
+
+noNull :: NetworkInterface -> Bool
+noNull = (/= "0.0.0.0") . show . ipv4
