@@ -12,7 +12,7 @@ module Network.Remote.Socket.MulticastSocket
   ) where
 
 import           Control.Monad.IO.Class           (MonadIO, liftIO)
-import           Control.Monad.Trans.Reader       (ReaderT (..), runReaderT)
+import           Control.Monad.Reader       (ReaderT (..), runReaderT)
 import           Data.ByteString                  (ByteString)
 import qualified Data.ByteString.Char8            as S
 import qualified Data.ByteString.Internal         as S
