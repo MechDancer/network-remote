@@ -14,7 +14,7 @@ module Network.Remote.Protocol.SimpleStream.Reader
   ) where
 
 import           Control.Monad.IO.Class               (MonadIO, liftIO)
-import           Control.Monad.Trans.Reader           (ReaderT (..), runReaderT)
+import           Control.Monad.Reader           (ReaderT (..), runReaderT)
 import           Data.Word                            (Word8)
 import           Network.Remote.Protocol.SimpleStream (SimpleInputStream,
                                                        SimpleOutputStream)

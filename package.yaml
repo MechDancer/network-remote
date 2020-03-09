@@ -28,7 +28,6 @@ dependencies:
 - hashtables
 - hashable
 - mtl
-- transformers
 - utf8-string
 
 library:

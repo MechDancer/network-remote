@@ -10,7 +10,7 @@ module Network.Remote.Resource.Address
 
 import Control.Concurrent.MVar (MVar, modifyMVar_, newMVar, readMVar)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Reader (ReaderT(..), runReaderT)
+import Control.Monad.Reader (ReaderT(..), runReaderT)
 import qualified Data.Map as M
 import Network.Remote.Protocol (Name)
 import Network.Socket (HostAddress, PortNumber, SockAddr, SockAddr(SockAddrInet), tupleToHostAddress)

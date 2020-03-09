@@ -8,7 +8,7 @@ module Network.Remote.Resource.Group
   ) where
 
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import           Control.Monad.Trans.Reader (ReaderT (..), runReaderT)
+import           Control.Monad.Reader (ReaderT (..), runReaderT)
 import           Data.Int                   (Int64)
 import           Data.IORef
 import qualified Data.Map                   as M
