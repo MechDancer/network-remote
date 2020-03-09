@@ -38,3 +38,6 @@ install:
 script:
   # Build the package, its tests, and its docs and run the tests
   - stack --no-terminal test --haddock --no-haddock-deps
+
+notifications:
+  webhooks: https://oapi.dingtalk.com/robot/send?access_token=0b88acd27818f66fb787144ebc43749f7806dc1a89901c26b9ef7d6107d50133
