@@ -6,10 +6,9 @@ import           Network.Info                          (ipv4, name)
 
 --import           Network.Mask
 --import           Network.Multicast
-import           Network.Remote                        (inStr,
-                                                        multicastListener)
 import           Network.Remote.Protocol               (CommonCmd (..),
-                                                        RemotePacket (..))
+                                                        RemotePacket (..),
+                                                        multicastListener)
 
 --import           Network.Remote.Protocol.SimpleStream
 --import           Network.Remote.Protocol.SimpleStream.ByteString
@@ -36,4 +35,4 @@ main = do
       recv = runReceiver receiveConfig [listener]
       brod = broadcast broadcastConfig CommonCmd (B.pack . encodeString $ "Hello, Haskell")
   forkIO $ forever recv
-  forever brod
+  brod

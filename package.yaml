@@ -29,6 +29,7 @@ dependencies:
 - hashable
 - mtl
 - utf8-string
+- split
 
 library:
   source-dirs: src

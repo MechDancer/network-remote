@@ -8,11 +8,11 @@ import           Data.Bits
 import           Data.ByteString                                 (ByteString)
 import qualified Data.ByteString                                 as B
 import qualified Data.Foldable                                   as F (find)
+import           Data.List.Split                                 (splitOn)
 import           Data.Maybe                                      (fromJust,
                                                                   isNothing)
 import           Network.Info
 import           Network.Mask
-import           Network.Remote
 import           Network.Remote.Protocol
 import qualified Network.Remote.Protocol.SimpleStream            as S
 import qualified Network.Remote.Protocol.SimpleStream.ByteString as S
@@ -73,8 +73,7 @@ match interface addr =
     addressStrToInt :: String -> Int
     addressStrToInt s = fromInteger result
       where
-        -- Drop port
-        array = split '.' $ takeWhile (/= '.') s
+        array = splitOn "." $ takeWhile (/= '.') s -- Drop port
         bytes = map read array
         result = foldr (\byte acc -> (acc `shiftL` 8) .|. (byte .&. 0xff)) 0 bytes
     sockAddrToInt :: SockAddr -> Int
