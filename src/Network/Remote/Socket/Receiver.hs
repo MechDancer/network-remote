@@ -17,7 +17,6 @@ import           Network.Remote.Protocol
 import qualified Network.Remote.Protocol.SimpleStream            as S
 import qualified Network.Remote.Protocol.SimpleStream.ByteString as S
 import           Network.Remote.Resource.Address
-import           Network.Remote.Resource.Networks                (cachedNetwork)
 import           Network.Remote.Socket.MulticastSocket
 import           Network.Socket                                  (SockAddr)
 import qualified Network.Socket.ByteString                       as B
@@ -25,17 +24,18 @@ import qualified System.IO.Streams                               as Streams
 
 data ReceiverConfig =
   ReceiverConfig
-    { _name          :: Maybe String
-    , _size          :: Int
-    , _addresses     :: Addresses
-    , _socketManager :: MulticastSocketManager
+    { _name          :: !(Maybe String)
+    , _size          :: !Int
+    , _addresses     :: !Addresses
+    , _networks      :: ![NetworkInterface]
+    , _socketManager :: !MulticastSocketManager
     }
 
 defaultReceiverConfig name Nothing = ReceiverConfig name 65536
 
 -- | Run multicast receiver
 runReceiver :: ReceiverConfig -> [MulticastListener] -> IO (Maybe RemotePacket)
-runReceiver (ReceiverConfig m size addresses manager) listeners = do
+runReceiver (ReceiverConfig m size addresses networks manager) listeners = do
   defaultIn <- inputStream <$> withManager manager defaultMulticastSocket
   mPacket <- Streams.read defaultIn
   if isNothing mPacket
@@ -55,7 +55,7 @@ runReceiver (ReceiverConfig m size addresses manager) listeners = do
           rest <- S.lookRest i
           -- Update addresses
           withAddresses addresses $ insertSockAddr sender addr
-          matched <- mapM (\n -> n `match` addr >>= \r -> return (n, r)) cachedNetwork
+          matched <- mapM (\n -> n `match` addr >>= \r -> return (n, r)) networks
           let correspondingInterface = fst . head $ filter snd matched
           -- Open the socket
           withManager manager $ openSocket correspondingInterface

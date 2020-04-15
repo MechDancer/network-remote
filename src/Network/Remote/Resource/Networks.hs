@@ -1,6 +1,5 @@
 module Network.Remote.Resource.Networks
   ( scanNetwork
-  , cachedNetwork
   ) where
 
 import           Control.Monad    (forM)
@@ -15,10 +14,6 @@ import           System.IO.Unsafe (unsafePerformIO)
 scanNetwork :: IO [NetworkInterface]
 scanNetwork =
   filter (\i -> foldr (\f acc -> f i && acc) True [isMono, notDocker, notLoopBack, notVMware, noNull]) <$> getNetworkInterfaces
-
--- | An unsafe memorize of network interfaces
-{-# NOINLINE cachedNetwork #-}
-cachedNetwork = unsafePerformIO scanNetwork
 
 -------------------------------------------------------------------
 instance Eq NetworkInterface where

@@ -12,7 +12,7 @@ module Network.Remote.Socket.MulticastSocket
   ) where
 
 import           Control.Monad.IO.Class           (MonadIO, liftIO)
-import           Control.Monad.Reader       (ReaderT (..), runReaderT)
+import           Control.Monad.Reader             (ReaderT (..), runReaderT)
 import           Data.ByteString                  (ByteString)
 import qualified Data.ByteString.Char8            as S
 import qualified Data.ByteString.Internal         as S
@@ -21,7 +21,7 @@ import qualified Data.HashTable.IO                as H
 import qualified Data.Map                         as M
 import           Network.Info
 import           Network.Multicast
-import           Network.Remote.Resource.Networks (cachedNetwork)
+import           Network.Remote.Resource.Networks (scanNetwork)
 import           Network.Socket
 import qualified Network.Socket.ByteString        as B
 import           System.IO.Streams                (InputStream, OutputStream)
@@ -39,14 +39,14 @@ data MulticastSocket =
 
 data SocketStream =
   SocketStream
-    { inputStream  :: InputStream (ByteString, SockAddr)
-    , outputStream :: OutputStream ByteString
+    { inputStream  :: !(InputStream (ByteString, SockAddr))
+    , outputStream :: !(OutputStream ByteString)
     }
 
 data MulticastSocketManager =
   Mgr
-    { _groupAddr :: (HostName, PortNumber)
-    , _core      :: HashTable NetworkInterface SocketStream
+    { _groupAddr :: !(HostName, PortNumber)
+    , _core      :: !(HashTable NetworkInterface SocketStream)
     }
 
 -------------------------------------------------------------------
@@ -113,4 +113,4 @@ openSocket net =
 
 -- | Open all network interfaces
 openAllSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [SocketStream]
-openAllSockets = mapM openSocket cachedNetwork
+openAllSockets = liftIO scanNetwork >>= mapM openSocket

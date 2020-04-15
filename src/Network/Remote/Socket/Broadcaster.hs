@@ -17,9 +17,9 @@ import qualified System.IO.Streams                               as Streams
 
 data BroadcasterConfig =
   BroadcasterConfig
-    { name          :: Maybe String
-    , size          :: Int
-    , socketManager :: MulticastSocketManager
+    { name          :: !(Maybe String)
+    , size          :: !Int
+    , socketManager :: !MulticastSocketManager
     }
 
 defaultBroadcasterConfig name Nothing     = BroadcasterConfig name 0x4000
