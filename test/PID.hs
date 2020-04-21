@@ -27,6 +27,7 @@ data PID =
     }
   deriving (Show, Read)
 
+
 double :: Parser Double
 double =
   (do part1 <- many digit
@@ -38,15 +39,17 @@ double =
 {-# NOINLINE currentPID #-}
 currentPID = unsafePerformIO . newIORef $ PID 0 0 0 0 0
 
-kp = string "kp" >> spaces >> double >>= \num -> return $ modifyIORef currentPID (\old -> old {_kp = num})
+term name block = string name >> spaces >> double >>= \num -> return $ modifyIORef currentPID (block num)
 
-ki = string "ki" >> spaces >> double >>= \num -> return $ modifyIORef currentPID (\old -> old {_ki = num})
+kp = term "kp" (\num old -> old {_kp = num})
 
-kd = string "kd" >> spaces >> double >>= \num -> return $ modifyIORef currentPID (\old -> old {_kd = num})
+ki = term "ki" (\num old -> old {_ki = num})
 
-ia = string "ia" >> spaces >> double >>= \num -> return $ modifyIORef currentPID (\old -> old {_ia = num})
+kd = term "kd" (\num old -> old {_kd = num})
 
-da = string "da" >> spaces >> double >>= \num -> return $ modifyIORef currentPID (\old -> old {_da = num})
+ia = term "ia" (\num old -> old {_ia = num})
+
+da = term "da" (\num old -> old {_da = num})
 
 expr = many . choice . map (\it -> spaces >> try it >>= \r -> spaces >> return r) $ [kp, ki, kd, ia, da]
 
@@ -62,12 +65,13 @@ toRemotePacket = do
   o <- empty 65536
   result <-
     withOutputStream o $ do
+      let append = writeList . B.unpack . encode
       write 0
-      writeList . B.unpack . encode $ _kp
-      writeList . B.unpack . encode $ _ki
-      writeList . B.unpack . encode $ _kd
-      writeList . B.unpack . encode $ _ia
-      writeList . B.unpack . encode $ _da
+      append _kp
+      append _ki
+      append _kd
+      append _ia
+      append _da
       writeList . B.unpack . encode $ True
       toList
   return $ RemotePacket "Haskell" 9 (B.pack result)
