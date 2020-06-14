@@ -4,7 +4,7 @@ github:              "MechDancer/network-remote"
 license:             BSD3
 author:              "MechDancer"
 maintainer:          "berberman, xxczxp"
-copyright:           "2019 MechDancer"
+copyright:           "2020 MechDancer"
 
 extra-source-files:
 - README.md
@@ -30,6 +30,8 @@ dependencies:
 - mtl
 - utf8-string
 - split
+- conduit
+- conduit-extra
 
 library:
   source-dirs: src
