@@ -5,8 +5,6 @@ module Network.Remote.Protocol
     Command (..),
     RemotePacket (..),
     remotePacket,
-    MulticastListener (..),
-    multicastListener,
     (=.=),
     Name,
   )

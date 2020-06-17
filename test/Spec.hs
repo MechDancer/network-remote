@@ -1,11 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Codec.Binary.UTF8.String (encodeString)
+import Conduit
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Monad (forever)
 import qualified Data.ByteString.Char8 as B
 import Network.Info (NetworkInterface, ipv4, name)
-import Network.Remote.Protocol (CommonCmd (..), RemotePacket (..), multicastListener)
+import Network.Remote.Protocol (CommonCmd (..), RemotePacket (..))
 import Network.Remote.Resource.Address
 import Network.Remote.Resource.Networks (scanNetwork)
 import Network.Remote.Socket.Broadcaster (broadcast, defaultBroadcasterConfig)
@@ -20,15 +21,9 @@ main = do
   addresses <- newAddresses
   networks <- scanNetwork
   print networks
-  -- Open all sockets manually | Errors might be aroused sometimes
+  -- Open all sockets manually (errors might be aroused due to some unexpected network interfaces)
   --  withManager manager openAllSockets
-  case role of
-    "r" : _ -> runReceiverForever addresses networks manager
-    "b" : _ -> runBroadcasterForever manager
-    _ -> print "Pass 'r' to the argument to run as a receiver, 'b' as a broadcaster."
-
-runReceiverForever :: Addresses -> [NetworkInterface] -> MulticastSocketManager -> IO ()
-runReceiverForever addresses networks manager = let receiveConfig = defaultReceiverConfig (Just "HaskellR") Nothing addresses networks manager in forever $ runReceiver receiveConfig [multicastListener [CommonCmd] print]
-
-runBroadcasterForever :: MulticastSocketManager -> IO ()
-runBroadcasterForever manager = let broadcastConfig = defaultBroadcasterConfig (Just "HaskellB") Nothing manager in forever $ broadcast broadcastConfig CommonCmd ("Hello.") >> threadDelay 500
+  (MulticastConduit i o) <- withManager manager defaultMulticastConduit
+  -- This will send 10 times "Hello" into UDP network
+  runConduit $ replicateC 10 "Hello" .| o
+  return ()
