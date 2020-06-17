@@ -87,11 +87,11 @@ mkMulticastConduit ::
   PortNumber ->
   Maybe NetworkInterface ->
   m (MulticastConduit m)
-mkMulticastConduit host port m = do
-  (s, addr) <- liftIO $ multicastSender host port
-  r <- liftIO $ multicastReceiver host port
-  liftIO $ forM_ m (setInterface s . show . ipv4)
-  return $ multicastSocketToConduit $ MulticastSocket s r addr
+mkMulticastConduit host port m = liftIO $ do
+  (s, addr) <-  multicastSender host port
+  r <-  multicastReceiver host port
+  forM_ m (setInterface s . show . ipv4)
+  return $ multicastSocketToConduit $ MulticastSocket r s addr
 
 -- | Get the default multicast socket retrieving all packets (Manager will /not/ hold this socket).
 defaultMulticastConduit ::
@@ -114,7 +114,7 @@ openSocket net = ReaderT $ \(Mgr (host, port) var) -> liftIO $ do
           (s, addr) <- multicastSender host port
           r <- liftIO $ multicastReceiver host port
           setInterface s . show . ipv4 $ net
-          let result = MulticastSocket s r addr
+          let result = MulticastSocket r s addr
           H.insert var net result
           return result
 
