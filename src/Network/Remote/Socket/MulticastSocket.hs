@@ -12,6 +12,7 @@ module Network.Remote.Socket.MulticastSocket
     defaultMulticastConduit,
     openSocket,
     openAllSockets,
+    shutdownManager,
   )
 where
 
@@ -48,6 +49,7 @@ data MulticastConduit m = MulticastConduit
     output :: forall o. ConduitT ByteString o m ()
   }
 
+multicastSocketToConduit :: MonadIO m => MulticastSocket -> MulticastConduit m
 multicastSocketToConduit MulticastSocket {..} = MulticastConduit i o
   where
     i = (sourceSocket receiver 4096)
@@ -59,14 +61,21 @@ data MulticastSocketManager = Mgr
   }
 
 -- | Create a multicast socket manager with group INET addr.
-newManager :: (MonadIO m) => HostName -> PortNumber -> m MulticastSocketManager
-newManager host port = liftIO H.new >>= \core -> return $ Mgr (host, port) core
+newManager :: HostName -> PortNumber -> IO MulticastSocketManager
+newManager host port = H.new >>= \core -> return $ Mgr (host, port) core
 
--- | A simple way to access `ReaderT`
+-- | A simple way to access 'ReaderT MulticastSocketManager'.
 withManager :: (MonadIO m) => MulticastSocketManager -> ReaderT (MulticastSocketManager) m a -> m a
 withManager = flip runReaderT
 
--- | Get all opened sockets
+-- | This DOES NOT work!
+{-# DEPRECATED #-}
+shutdownManager :: (MonadIO m) => ReaderT MulticastSocketManager m ()
+shutdownManager = openedSockets >>= liftIO . mapM_ (go . snd)
+  where
+    go MulticastSocket {..} = close' sender >> close' receiver
+
+-- | Get all opened sockets.
 openedSockets ::
   (MonadIO m) =>
   ReaderT (MulticastSocketManager) m [(NetworkInterface, MulticastSocket)]
@@ -84,7 +93,7 @@ mkMulticastConduit host port m = do
   liftIO $ forM_ m (setInterface s . show . ipv4)
   return $ multicastSocketToConduit $ MulticastSocket s r addr
 
--- | Get the default multicast socket retrieving all packets (Without manager constraint).
+-- | Get the default multicast socket retrieving all packets (Manager will /not/ hold this socket).
 defaultMulticastConduit ::
   (MonadIO m) => ReaderT MulticastSocketManager m (MulticastConduit m)
 defaultMulticastConduit =

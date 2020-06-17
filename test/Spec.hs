@@ -4,6 +4,7 @@ import Codec.Binary.UTF8.String (encodeString)
 import Conduit
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Monad (forever)
+import Data.Conduit.Network.UDP
 import qualified Data.ByteString.Char8 as B
 import Network.Info (NetworkInterface, ipv4, name)
 import Network.Remote.Protocol (CommonCmd (..), RemotePacket (..))
@@ -24,6 +25,8 @@ main = do
   -- Open all sockets manually (errors might be aroused due to some unexpected network interfaces)
   --  withManager manager openAllSockets
   (MulticastConduit i o) <- withManager manager defaultMulticastConduit
-  -- This will send 10 times "Hello" into UDP network
-  runConduit $ replicateC 10 "Hello" .| o
+  -- This will send 1000 times "Hello" into UDP network
+  runConduit $ replicateC 1000 "Hello" .| mapMC (\x -> threadDelay 100 >> return x) .| o
+  forkIO $ runConduit $ i .| mapC (\(Message a _) -> a) .| stdoutC
+  forever $ threadDelay 100
   return ()
