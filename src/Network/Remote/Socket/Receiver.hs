@@ -5,6 +5,7 @@ module Network.Remote.Socket.Receiver
   )
 where
 
+import Conduit
 import Data.Bits
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -20,7 +21,6 @@ import Network.Remote.Resource.Address
 import Network.Remote.Socket.MulticastSocket
 import Network.Socket (SockAddr)
 import qualified Network.Socket.ByteString as B
-import qualified System.IO.Streams as Streams
 
 data ReceiverConfig = ReceiverConfig
   { _name :: !(Maybe String),
@@ -33,36 +33,37 @@ data ReceiverConfig = ReceiverConfig
 defaultReceiverConfig name Nothing = ReceiverConfig name 65536
 
 -- | Run multicast receiver
-runReceiver :: ReceiverConfig -> [MulticastListener] -> IO (Maybe RemotePacket)
-runReceiver (ReceiverConfig m size addresses networks manager) listeners = do
-  defaultIn <- inputStream <$> withManager manager defaultMulticastSocket
-  mPacket <- Streams.read defaultIn
-  if isNothing mPacket
-    then return Nothing
-    else do
-      let Just (bs, addr) = mPacket
-      i <- S.fromByteString bs
-      -- Read name
-      sender <- S.readEnd i
-      -- Ignore packet sent by myself
-      if m == Just sender
-        then return Nothing
-        else-- Read cmd
-        do
-          cmd <- S.read i
-          -- Read payload
-          rest <- S.lookRest i
-          -- Update addresses
-          withAddresses addresses $ insertSockAddr sender addr
-          matched <- mapM (\n -> n `match` addr >>= \r -> return (n, r)) networks
-          let correspondingInterface = fst . head $ filter snd matched
-          -- Open the socket
-          withManager manager $ openSocket correspondingInterface
-          let filtered = filter (\l -> null (interest l) || cmd `elem` interest l) listeners
-              packet = RemotePacket sender cmd (B.pack rest)
-          -- Handle callbacks
-          mapM_ (`process` packet) filtered
-          return . Just $ packet
+runReceiver :: (MonadIO m) => ReceiverConfig -> ConduitT () RemotePacket m ()
+runReceiver (ReceiverConfig m size addresses networks manager) = return ()
+
+-- defaultIn <- inputStream <$> withManager manager defaultMulticastSocket
+-- mPacket <- Streams.read defaultIn
+-- if isNothing mPacket
+--   then return Nothing
+--   else do
+--     let Just (bs, addr) = mPacket
+--     i <- S.fromByteString bs
+--     -- Read name
+--     sender <- S.readEnd i
+--     -- Ignore packet sent by myself
+--     if m == Just sender
+--       then return Nothing
+--       else-- Read cmd
+--       do
+--         cmd <- S.read i
+--         -- Read payload
+--         rest <- S.lookRest i
+--         -- Update addresses
+--         withAddresses addresses $ insertSockAddr sender addr
+--         matched <- mapM (\n -> n `match` addr >>= \r -> return (n, r)) networks
+--         let correspondingInterface = fst . head $ filter snd matched
+--         -- Open the socket
+--         withManager manager $ openSocket correspondingInterface
+--         let filtered = filter (\l -> null (interest l) || cmd `elem` interest l) listeners
+--             packet = RemotePacket sender cmd (B.pack rest)
+--         -- Handle callbacks
+--         mapM_ (`process` packet) filtered
+--         return . Just $ packet
 
 match :: NetworkInterface -> SockAddr -> IO Bool
 match interface addr =

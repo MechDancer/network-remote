@@ -1,23 +1,28 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Network.Remote.Socket.MulticastSocket
   ( MulticastSocket (..),
-    SocketStream (..),
-    multicastSocketToStream,
+    multicastSocketToConduit,
     MulticastSocketManager,
+    MulticastConduit (..),
     newManager,
     withManager,
     openedSockets,
-    defaultMulticastSocket,
+    defaultMulticastConduit,
     openSocket,
     openAllSockets,
   )
 where
 
+import Conduit
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT (..), runReaderT)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as S
 import qualified Data.ByteString.Internal as S
 import Data.Foldable (forM_)
+import Data.Conduit.Network.UDP
 import qualified Data.HashTable.IO as H
 import qualified Data.Map as M
 import GHC.Generics (Generic)
@@ -25,93 +30,85 @@ import Network.Info
 import Network.Multicast
 import Network.Remote.Resource.Networks (scanNetwork)
 import Network.Socket
-import qualified Network.Socket.ByteString as B
-import System.IO.Streams (InputStream, OutputStream)
-import qualified System.IO.Streams as Streams
 
 type HashTable k v = H.BasicHashTable k v
 
 -------------------------------------------------------------------
 data MulticastSocket = MulticastSocket
-  { receiver :: !Socket,
+  { -- | Receiver socket
+    receiver :: !Socket,
+    -- | Sender socket
     sender :: !Socket,
+    -- | Multicast addr
     address :: !SockAddr
   }
 
-data SocketStream = SocketStream
-  { inputStream :: !(InputStream (ByteString, SockAddr)),
-    outputStream :: !(OutputStream ByteString)
+data MulticastConduit m = MulticastConduit
+  { input :: forall i. ConduitT i Message m (),
+    output :: forall o. ConduitT ByteString o m ()
   }
+
+multicastSocketToConduit MulticastSocket {..} = MulticastConduit i o
+  where
+    i = (sourceSocket receiver 4096)
+    o = mapC (\s -> Message s address) .| (sinkAllToSocket sender)
 
 data MulticastSocketManager = Mgr
-  { _groupAddr :: !(HostName, PortNumber),
-    _core :: !(HashTable NetworkInterface SocketStream)
+  { groupAddr :: !(HostName, PortNumber),
+    core :: !(HashTable NetworkInterface (MulticastSocket))
   }
 
--------------------------------------------------------------------
-multicastSocketToStream :: MulticastSocket -> IO SocketStream
-multicastSocketToStream (MulticastSocket sender receiver addr) = do
-  input <- socketToStreamsInternalI receiver
-  output <- socketToStreamsInternalO sender addr
-  return $ SocketStream input output
+-- | Create a multicast socket manager with group INET addr.
+newManager :: (MonadIO m) => HostName -> PortNumber -> m MulticastSocketManager
+newManager host port = liftIO H.new >>= \core -> return $ Mgr (host, port) core
 
-socketToStreamsInternalI socket = Streams.makeInputStream input
-  where
-    input = do
-      (s, addr) <- B.recvFrom socket 4096
-      return $! if S.null s then Nothing else Just (s, addr)
-
-socketToStreamsInternalO socket addr = Streams.makeOutputStream output
-  where
-    output Nothing = return ()
-    output (Just s) = if S.null s then return () else B.sendAllTo socket s addr
-
--------------------------------------------------------------------
-
--- | Create a multicast socket manager with group INET addr
-newManager :: HostName -> PortNumber -> IO MulticastSocketManager
-newManager host port = H.new >>= \core -> return $ Mgr (host, port) core
-
--- | Simple way to access `ReaderT`
-withManager ::
-  MulticastSocketManager -> ReaderT MulticastSocketManager m a -> m a
+-- | A simple way to access `ReaderT`
+withManager :: (MonadIO m) => MulticastSocketManager -> ReaderT (MulticastSocketManager) m a -> m a
 withManager = flip runReaderT
 
 -- | Get all opened sockets
 openedSockets ::
   (MonadIO m) =>
-  ReaderT MulticastSocketManager m [(NetworkInterface, SocketStream)]
-openedSockets = ReaderT $ liftIO . H.toList . _core
+  ReaderT (MulticastSocketManager) m [(NetworkInterface, MulticastSocket)]
+openedSockets = ReaderT $ liftIO . H.toList . core
 
--- | Create a multicast socket containing a sender and a receiver
-multicastOn ::
-  -- | Group host
+mkMulticastConduit ::
+  (MonadIO m) =>
   HostName ->
   PortNumber ->
   Maybe NetworkInterface ->
-  IO SocketStream
-multicastOn host port m = do
-  (s, addr) <- multicastSender host port
-  r <- multicastReceiver host port
-  forM_ m (setInterface s . show . ipv4)
-  multicastSocketToStream $ MulticastSocket s r addr
+  m (MulticastConduit m)
+mkMulticastConduit host port m = do
+  (s, addr) <- liftIO $ multicastSender host port
+  r <- liftIO $ multicastReceiver host port
+  liftIO $ forM_ m (setInterface s . show . ipv4)
+  return $ multicastSocketToConduit $ MulticastSocket s r addr
 
--- | Get the default multicast socket retrieving all packets
-defaultMulticastSocket ::
-  (MonadIO m) => ReaderT MulticastSocketManager m SocketStream
-defaultMulticastSocket =
-  ReaderT $ \(Mgr (host, port) _) -> liftIO $ multicastOn host port Nothing
+-- | Get the default multicast socket retrieving all packets (Without manager constraint).
+defaultMulticastConduit ::
+  (MonadIO m) => ReaderT MulticastSocketManager m (MulticastConduit m)
+defaultMulticastConduit =
+  ReaderT $ \(Mgr (host, port) _) -> mkMulticastConduit host port Nothing
 
--- | Get and open a multicast socket with a specific network interface
+-- | Open and save a multicast socket with a specific network interface.
 openSocket ::
   (MonadIO m) =>
   NetworkInterface ->
-  ReaderT MulticastSocketManager m SocketStream
+  ReaderT MulticastSocketManager m MulticastSocket
 openSocket net = ReaderT $ \(Mgr (host, port) var) -> liftIO $ do
-  result <- multicastOn host port (Just net)
-  H.insert var net result
-  return result
+  result <- H.lookup var net
+  case result of
+    Just x -> return x
+    Nothing -> go
+      where
+        go = do
+          (s, addr) <- multicastSender host port
+          r <- liftIO $ multicastReceiver host port
+          setInterface s . show . ipv4 $ net
+          let result = MulticastSocket s r addr
+          H.insert var net result
+          return result
 
--- | Open all network interfaces
-openAllSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [SocketStream]
+-- | Open all network interfaces.
+openAllSockets :: (MonadIO m) => ReaderT (MulticastSocketManager) m [MulticastSocket]
 openAllSockets = liftIO scanNetwork >>= mapM openSocket

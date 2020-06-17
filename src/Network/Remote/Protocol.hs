@@ -79,11 +79,3 @@ data RemotePacket = RemotePacket
 -- | Build a `RemotePacket`
 remotePacket :: (Command m) => Name -> m -> ByteString -> RemotePacket
 remotePacket name cmd = RemotePacket name (packID cmd)
-
-data MulticastListener = ML
-  { interest :: [Word8],
-    process :: RemotePacket -> IO ()
-  }
-
-multicastListener :: (Command a) => [a] -> (RemotePacket -> IO ()) -> MulticastListener
-multicastListener = ML . map packID
