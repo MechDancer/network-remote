@@ -22,9 +22,10 @@ main = do
   print networks
   -- Open all sockets manually | Errors might be aroused sometimes
   --  withManager manager openAllSockets
-  case head role of
-    "r" -> runReceiverForever addresses networks manager
-    "b" -> runBroadcasterForever manager
+  case role of
+    "r" : _ -> runReceiverForever addresses networks manager
+    "b" : _ -> runBroadcasterForever manager
+    _ -> print "Pass 'r' to the argument to run as a receiver, 'b' as a broadcaster."
 
 runReceiverForever :: Addresses -> [NetworkInterface] -> MulticastSocketManager -> IO ()
 runReceiverForever addresses networks manager = let receiveConfig = defaultReceiverConfig (Just "HaskellR") Nothing addresses networks manager in forever $ runReceiver receiveConfig [multicastListener [CommonCmd] print]
