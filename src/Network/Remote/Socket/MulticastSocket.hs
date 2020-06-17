@@ -52,12 +52,12 @@ data MulticastConduit m = MulticastConduit
 multicastSocketToConduit :: MonadIO m => MulticastSocket -> MulticastConduit m
 multicastSocketToConduit MulticastSocket {..} = MulticastConduit i o
   where
-    i = (sourceSocket receiver 4096)
-    o = mapC (\s -> Message s address) .| (sinkAllToSocket sender)
+    i = sourceSocket receiver 4096
+    o = mapC (`Message` address) .| sinkAllToSocket sender
 
 data MulticastSocketManager = Mgr
   { groupAddr :: !(HostName, PortNumber),
-    core :: !(HashTable NetworkInterface (MulticastSocket))
+    core :: !(HashTable NetworkInterface MulticastSocket)
   }
 
 -- | Create a multicast socket manager with group INET addr.
@@ -65,7 +65,7 @@ newManager :: HostName -> PortNumber -> IO MulticastSocketManager
 newManager host port = H.new >>= \core -> return $ Mgr (host, port) core
 
 -- | A simple way to access 'ReaderT MulticastSocketManager'.
-withManager :: (MonadIO m) => MulticastSocketManager -> ReaderT (MulticastSocketManager) m a -> m a
+withManager :: (MonadIO m) => MulticastSocketManager -> ReaderT MulticastSocketManager m a -> m a
 withManager = flip runReaderT
 
 -- | This DOES NOT work!
@@ -78,7 +78,7 @@ shutdownManager = openedSockets >>= liftIO . mapM_ (go . snd)
 -- | Get all opened sockets.
 openedSockets ::
   (MonadIO m) =>
-  ReaderT (MulticastSocketManager) m [(NetworkInterface, MulticastSocket)]
+  ReaderT MulticastSocketManager m [(NetworkInterface, MulticastSocket)]
 openedSockets = ReaderT $ liftIO . H.toList . core
 
 mkMulticastConduit ::
@@ -119,5 +119,5 @@ openSocket net = ReaderT $ \(Mgr (host, port) var) -> liftIO $ do
           return result
 
 -- | Open all network interfaces.
-openAllSockets :: (MonadIO m) => ReaderT (MulticastSocketManager) m [MulticastSocket]
+openAllSockets :: (MonadIO m) => ReaderT MulticastSocketManager m [MulticastSocket]
 openAllSockets = liftIO scanNetwork >>= mapM openSocket
