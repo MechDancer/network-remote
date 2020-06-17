@@ -1,25 +1,28 @@
 module Network.Remote.Protocol.SimpleStream.Reader
-  ( withInputStream
-  , availableIn
-  , read
-  , readN
-  , readZigZag
-  , look
-  , lookRest
-  , withOutputStream
-  , availableOut
-  , write
-  , writeList
-  , toList
-  ) where
+  ( withInputStream,
+    availableIn,
+    read,
+    readN,
+    readZigZag,
+    look,
+    lookRest,
+    withOutputStream,
+    availableOut,
+    write,
+    writeList,
+    toList,
+  )
+where
 
-import           Control.Monad.IO.Class               (MonadIO, liftIO)
-import           Control.Monad.Reader           (ReaderT (..), runReaderT)
-import           Data.Word                            (Word8)
-import           Network.Remote.Protocol.SimpleStream (SimpleInputStream,
-                                                       SimpleOutputStream)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Reader (ReaderT (..), runReaderT)
+import Data.Word (Word8)
+import Network.Remote.Protocol.SimpleStream
+  ( SimpleInputStream,
+    SimpleOutputStream,
+  )
 import qualified Network.Remote.Protocol.SimpleStream as S
-import           Prelude                              hiding (read)
+import Prelude hiding (read)
 
 withInputStream :: SimpleInputStream -> ReaderT SimpleInputStream m a -> m a
 withInputStream = flip runReaderT

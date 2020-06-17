@@ -1,17 +1,18 @@
 module Network.Remote.Protocol.ZigZag
-  ( ZigZagList
-  , showZigZagCodeHex
-  , encode
-  , decode
-  , encodeN
-  , decodeN
-  ) where
+  ( ZigZagList,
+    showZigZagCodeHex,
+    encode,
+    decode,
+    encodeN,
+    decodeN,
+  )
+where
 
-import           Data.Bits
+import Data.Bits
 import qualified Data.ByteString as B
-import           Data.Word
-import           Numeric
-import           Text.Ascii
+import Data.Word
+import Numeric
+import Text.Ascii
 
 type ZigZagList = [Word8]
 
@@ -32,7 +33,7 @@ unsignedToSigned :: Integer -> Integer
 unsignedToSigned a =
   if (a .&. 1) == 0
     then shift a (negate 1)
-    else -(shift (a + 1) (negate 1))
+    else - (shift (a + 1) (negate 1))
 
 -- | `zigZagUnsignedIntegerToWordList` encodes a `Integer` to a `ZigZagList`
 -- The Integer should be positive, and we do not check it.
@@ -64,10 +65,11 @@ zigZagSplit = reverse . snd . zigZagSplitBase
 zigZagSplitBase :: ZigZagList -> (ZigZagList, [ZigZagList])
 zigZagSplitBase =
   foldl
-    (\(buff, result) x ->
-       if (x .&. 0x80) == 0x80
-         then (x : buff, result) --add x into buffer
-         else ([], reverse (x : buff) : result))
+    ( \(buff, result) x ->
+        if (x .&. 0x80) == 0x80
+          then (x : buff, result) --add x into buffer
+          else ([], reverse (x : buff) : result)
+    )
     ([], [])
 
 -- | UnZigZag from a zigZagList including multiple ZigZagNumbers
@@ -80,10 +82,11 @@ unZigZagMultipleUInteger = reverse . snd . unZigZagMultipleUIntegerBase
 unZigZagMultipleUIntegerBase :: ZigZagList -> (ZigZagList, [Integer])
 unZigZagMultipleUIntegerBase =
   foldl
-    (\(buff, result) x ->
-       if (x .&. 0x80) == 0x80
-         then (x : buff, result) --add x into buffer
-         else ([], unZigZagUIntegerFromWordListNCBE (x : buff) : result))
+    ( \(buff, result) x ->
+        if (x .&. 0x80) == 0x80
+          then (x : buff, result) --add x into buffer
+          else ([], unZigZagUIntegerFromWordListNCBE (x : buff) : result)
+    )
     ([], [])
 
 -- | encode single Integer

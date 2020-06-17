@@ -1,13 +1,12 @@
 module Network.Remote.Protocol.SimpleStream.ByteString where
 
-import           Codec.Binary.UTF8.String
-import           Data.ByteString                      (ByteString)
-import qualified Data.ByteString                      as B
-import           Data.Word                            (Word8)
-import           Network.Remote.Protocol.SimpleStream (SimpleInputStream,
-                                                       SimpleOutputStream)
+import Codec.Binary.UTF8.String
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as B
+import Data.Word (Word8)
+import Network.Remote.Protocol.SimpleStream (SimpleInputStream, SimpleOutputStream)
 import qualified Network.Remote.Protocol.SimpleStream as S
-import qualified Network.Remote.Protocol.ZigZag       as ZigZag
+import qualified Network.Remote.Protocol.ZigZag as ZigZag
 
 -- | Create a `SimpleInputStream` from a `ByteString`
 fromByteString :: ByteString -> IO SimpleInputStream

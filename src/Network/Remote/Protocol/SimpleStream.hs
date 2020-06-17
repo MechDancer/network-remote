@@ -1,40 +1,37 @@
 module Network.Remote.Protocol.SimpleStream
-  ( SimpleInputStream()
-  , fromList
-  , availableIn
-  , read
-  , readN
-  , readZigZag
-  , look
-  , lookRest
-  , skip
-  , SimpleOutputStream()
-  , empty
-  , availableOut
-  , write
-  , writeList
-  , writeToOutputStream
-  , toList
-  ) where
+  ( SimpleInputStream (),
+    fromList,
+    availableIn,
+    read,
+    readN,
+    readZigZag,
+    look,
+    lookRest,
+    skip,
+    SimpleOutputStream (),
+    empty,
+    availableOut,
+    write,
+    writeList,
+    writeToOutputStream,
+    toList,
+  )
+where
 
-import           Control.Monad                  (forM_)
-import           Data.Array.IO                  (IOUArray, getElems)
-import           Data.Array.MArray              (getBounds, newArray_,
-                                                 newListArray, readArray,
-                                                 writeArray)
-import           Data.Bits
-import           Data.IORef                     (IORef, newIORef, readIORef,
-                                                 writeIORef)
-import           Data.Traversable               (forM, sequence)
-import           Data.Word                      (Word8)
+import Control.Monad (forM_)
+import Data.Array.IO (IOUArray, getElems)
+import Data.Array.MArray (getBounds, newArray_, newListArray, readArray, writeArray)
+import Data.Bits
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.Traversable (forM, sequence)
+import Data.Word (Word8)
 import qualified Network.Remote.Protocol.ZigZag as Z
-import           Prelude                        hiding (read)
+import Prelude hiding (read)
 
-data SimpleInputStream =
-  SimpleInputStream
-    { _coreIn :: IOUArray Int Word8
-    , ptrIn   :: IORef Int
-    }
+data SimpleInputStream = SimpleInputStream
+  { _coreIn :: IOUArray Int Word8,
+    ptrIn :: IORef Int
+  }
 
 fromList :: [Word8] -> IO SimpleInputStream
 fromList l = do
@@ -69,8 +66,9 @@ read (SimpleInputStream core ptr) = do
 readN :: SimpleInputStream -> Int -> IO [Word8]
 readN (SimpleInputStream core ptr) k = do
   ava <- availableIn (SimpleInputStream core ptr)
-  sequence . take (min ava k) $!
-    repeat $ do
+  sequence . take (min ava k)
+    $! repeat
+    $ do
       p <- readIORef ptr
       writeIORef ptr $ p + 1
       readArray core p
@@ -99,11 +97,10 @@ lookRest (SimpleInputStream core ptr) = do
   forM [p .. len - 1] $! readArray core
 
 -------------------------------------------------------------------
-data SimpleOutputStream =
-  SimpleOutputStream
-    { _coreOut :: IOUArray Int Word8
-    , ptrOut   :: IORef Int
-    }
+data SimpleOutputStream = SimpleOutputStream
+  { _coreOut :: IOUArray Int Word8,
+    ptrOut :: IORef Int
+  }
 
 empty :: Int -> IO SimpleOutputStream
 empty len = do
@@ -140,8 +137,9 @@ writeToOutputStream :: SimpleInputStream -> SimpleOutputStream -> Int -> IO ()
 writeToOutputStream i@(SimpleInputStream coreIn ptrIn) o@(SimpleOutputStream coreOut ptrOut) len = do
   avaOut <- availableOut o
   avaIn <- availableIn i
-  sequence_ . take (len `min` avaIn `min` avaOut) $
-    repeat $ do
+  sequence_ . take (len `min` avaIn `min` avaOut)
+    $ repeat
+    $ do
       pIn <- readIORef ptrIn
       pOut <- readIORef ptrOut
       readArray coreIn pIn >>= writeArray coreOut pOut

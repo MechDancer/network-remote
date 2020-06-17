@@ -1,14 +1,12 @@
-module Network.Remote.Resource.Networks
-  ( scanNetwork
-  ) where
+module Network.Remote.Resource.Networks (scanNetwork) where
 
-import           Control.Monad    (forM)
-import           Data.Bits
-import           Data.Char        (toLower)
-import           Data.Hashable
-import           Data.List        (isInfixOf)
-import           Network.Info
-import           System.IO.Unsafe (unsafePerformIO)
+import Control.Monad (forM)
+import Data.Bits
+import Data.Char (toLower)
+import Data.Hashable
+import Data.List (isInfixOf)
+import Network.Info
+import System.IO.Unsafe (unsafePerformIO)
 
 -- | Scan network interfaces right now
 scanNetwork :: IO [NetworkInterface]
