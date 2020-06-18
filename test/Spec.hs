@@ -32,7 +32,7 @@ main = do
   runConduit $ yieldMany [1 .. 1000] .| mapMC (\x -> threadDelay 100 >> (return . B.pack . (++ "\n") . show $ x)) .| o
   print "The last number should be 1000."
 
--- conf = defaultBroadcasterConfig (return "Alice") Nothing
+-- conf = defaultBroadcasterConfig (return "Alice")
 -- runConduit $ yieldMany [1..100] .| mapC (\int -> (CommonCmd, "Hi there: " <> (B.pack . show $ int))) .| broadcast conf .| o
 
 
