@@ -39,10 +39,14 @@ broadcast (BroadcasterConfig m size) =
     if isNothing m && (command =.= YELL_ACK || command =.= ADDRESS_ACK)
       then error "No name"
       else yield . B.pack $ runConduitPure $ (do 
+        -- write name
         case m of 
-          (Just name) -> yieldMany . C.encode $ name
+          -- attention! you need to add 0 after the String manully
+          (Just name) -> yieldMany . C.encode $ name ++ "\0"
           Nothing -> return ()
+        -- Write cmd
         yield $ packID command
+        -- Write payload
         yieldMany $ B.unpack payload) .| sinkList
 
         -- ( liftIO $ do
