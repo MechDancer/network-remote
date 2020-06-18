@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Network.Remote.Socket.Broadcaster
   ( BroadcasterConfig (..),
     defaultBroadcasterConfig,
@@ -31,25 +33,22 @@ instance Show BroadcasterConfig where
 
 -- | Broadcast a payload
 broadcast :: (MonadIO m) => BroadcasterConfig -> ConduitT RemotePacket ByteString m ()
-broadcast (BroadcasterConfig m size) = do
-  -- TODO
-  return ()
-  -- if isNothing m && (cmd =.= YELL_ACK || cmd =.= ADDRESS_ACK)
-  --   then error "No name"
-  --   -- TODO: remove simple stream and lift IO
-  --   else do
-  --     stream <- S.empty size
-  --     liftIO $ case m of
-  --       -- Write name
-  --       (Just name) -> S.writeEnd stream name
-  --       Nothing -> return ()
-  --     -- Write cmd
-  --     S.write stream $ packID cmd
-  --     -- Write payload
-  --     S.writeList stream $ B.unpack payload
-  --     list <- S.toList stream
-  --     socks <- withManager manager openedSockets
-  --     let package = B.pack list
-  --         x = leftover package
-  --     forM_ socks (\(_,MulticastSocket _ out) -> out >> x)
-  --     -- forM_ socks (Streams.write package . outputStream . snd)
+broadcast (BroadcasterConfig m size) =
+  awaitForever $ \RemotePacket {..} -> 
+    if isNothing m && (command =.= YELL_ACK || command =.= ADDRESS_ACK)
+      then error "No name"
+      else
+        ( liftIO $ do
+            stream <- S.empty size
+            -- Write name
+            case m of
+              (Just name) -> S.writeEnd stream name
+              Nothing -> return ()
+            -- Write cmd
+            S.write stream $ packID command
+            -- Write payload
+            S.writeList stream $ B.unpack payload
+            S.toList stream
+        )
+          >>= yield
+          . B.pack
