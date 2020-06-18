@@ -69,8 +69,8 @@ instance Command CommonCmd where
 
 data RemotePacket = RemotePacket
   { sender :: !Name,
-    command :: !Word8,
-    payload :: !ByteString
+    command :: {-# UNPACK #-} !Word8,
+    payload :: {-# UNPACK #-} !ByteString
   }
   deriving (Show)
 

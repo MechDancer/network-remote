@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Network.Remote.Socket.Broadcaster
   ( BroadcasterConfig (..),
     defaultBroadcasterConfig,
@@ -35,7 +33,7 @@ instance Show BroadcasterConfig where
 -- This does /NOT/ perform 'IO' until fuses with 'MulticastConduit'.
 broadcast :: (Monad m, Command c) => BroadcasterConfig -> ConduitT (c, ByteString) ByteString m ()
 broadcast (BroadcasterConfig m size) =
-  awaitForever $ \(command,payload) -> 
+  awaitForever $ \(command, payload) -> 
     if isNothing m && (command =.= YELL_ACK || command =.= ADDRESS_ACK)
       then error "No name"
       else yield . B.pack . runConduitPure . (.| sinkList) $ do 
