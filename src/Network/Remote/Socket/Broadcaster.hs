@@ -19,6 +19,7 @@ import qualified Network.Socket.ByteString as B
 import qualified System.IO.Streams as Streams
 import Control.Monad.IO.Class
 import Conduit
+import Codec.Binary.UTF8.String as C
 
 data BroadcasterConfig = BroadcasterConfig
   { name :: !(Maybe String),
@@ -37,18 +38,24 @@ broadcast (BroadcasterConfig m size) =
   awaitForever $ \RemotePacket {..} -> 
     if isNothing m && (command =.= YELL_ACK || command =.= ADDRESS_ACK)
       then error "No name"
-      else
-        ( liftIO $ do
-            stream <- S.empty size
-            -- Write name
-            case m of
-              (Just name) -> S.writeEnd stream name
-              Nothing -> return ()
-            -- Write cmd
-            S.write stream $ packID command
-            -- Write payload
-            S.writeList stream $ B.unpack payload
-            S.toList stream
-        )
-          >>= yield
-          . B.pack
+      else yield . B.pack $ runConduitPure $ (do 
+        case m of 
+          (Just name) -> yieldMany . C.encode $ name
+          Nothing -> return ()
+        yield $ packID command
+        yieldMany $ B.unpack payload) .| sinkList
+
+        -- ( liftIO $ do
+        --     stream <- S.empty size
+        --     -- Write name
+        --     case m of
+        --       (Just name) -> S.writeEnd stream name
+        --       Nothing -> return ()
+        --     -- Write cmd
+        --     S.write stream $ packID command
+        --     -- Write payload
+        --     S.writeList stream $ B.unpack payload
+        --     S.toList stream
+        -- )
+        --   >>= yield
+        --   . B.pack
