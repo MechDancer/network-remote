@@ -7,6 +7,7 @@ module Network.Remote.Socket.Receiver
 where
 
 import Conduit
+import Control.Monad
 import Data.Bits
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
@@ -29,27 +30,35 @@ data ReceiverConfig = ReceiverConfig
   }
 
 -- | Create a multicast receiver stream.
-receive :: (MonadIO m) => ReceiverConfig -> Message -> ConduitT i RemotePacket m ()
-receive (ReceiverConfig name addresses networks manager) Message {..} = yieldBS msgData .| do
-  -- Get sender name
-  sender <- readStringEnd
-  -- Ignore packet sent by my self
-  if sender == name
-    then return ()
-    else do
-      -- Get command
-      a <- await
-      case a of
-        Nothing -> return ()
-        (Just cmd) -> do
-          -- Get payload
-          rest <- sinkList
-          -- Update addresses mapping
-          withAddresses addresses $ insertSockAddr sender msgSender
-          matched <- liftIO $ mapM (\n -> n `match` msgSender >>= \r -> return (n, r)) networks
-          -- Open sockets
-          withManager manager $ openSocket . fst . head $ filter snd matched
-          yield $ RemotePacket sender cmd (B.pack rest)
+receive :: (MonadIO m) => ReceiverConfig -> ConduitT i RemotePacket m ()
+receive (ReceiverConfig name addresses networks manager) = do
+  MulticastConduit {..} <- withManager manager defaultMulticastConduit
+  -- TODO
+  return ()
+
+consumer :: (MonadIO m) => ReceiverConfig -> ConduitT Message RemotePacket m ()
+consumer (ReceiverConfig name addresses networks manager) =
+  awaitForever $ \Message {..} ->
+    yieldBS msgData .| do
+      -- Get sender name
+      sender <- readStringEnd
+      -- Ignore packet sent by my self
+      if sender == name
+        then return ()
+        else do
+          -- Get command
+          a <- await
+          case a of
+            Nothing -> return ()
+            (Just cmd) -> do
+              -- Get payload
+              rest <- sinkList
+              -- Update addresses mapping
+              withAddresses addresses $ insertSockAddr sender msgSender
+              matched <- liftIO $ mapM (\n -> n `match` msgSender >>= \r -> return (n, r)) networks
+              -- Open sockets
+              withManager manager $ openSocket . fst . head $ filter snd matched
+              yield $ RemotePacket sender cmd (B.pack rest)
 
 match :: NetworkInterface -> SockAddr -> IO Bool
 match interface addr =
