@@ -8,7 +8,7 @@ import Data.Conduit.Network.UDP
 import qualified Data.ByteString.Char8 as B
 import Network.Info (NetworkInterface, ipv4, name)
 import Network.Multicast
-import Network.Remote.Protocol (CommonCmd (..), RemotePacket (..))
+import Network.Remote.Protocol
 import Network.Remote.Resource.Address
 import Network.Remote.Resource.Networks (scanNetwork)
 import Network.Remote.Socket.Broadcaster (broadcast, defaultBroadcasterConfig)
@@ -30,8 +30,11 @@ main = do
   forkIO $ runConduit $ i .| mapC (\(Message a _) -> a) .| stdoutC
   -- This will send 1000 times "Hello" into UDP network
   runConduit $ yieldMany [1 .. 1000] .| mapMC (\x -> threadDelay 100 >> (return . B.pack . (++ "\n") . show $ x)) .| o
-  threadDelay 10
   print "The last number should be 1000."
+
+-- conf = defaultBroadcasterConfig (return "Alice")
+-- runConduit $ yieldMany [1..100] .| mapC (\int -> (CommonCmd, "Hi there: " <> (B.pack . show $ int))) .| broadcast conf .| o
+
 
 -- From 'network-multicast'
 {- nativeTest = do

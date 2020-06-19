@@ -35,7 +35,7 @@ data ReceiverConfig = ReceiverConfig
     _socketManager :: !MulticastSocketManager
   }
 
-defaultReceiverConfig name Nothing = ReceiverConfig name 65536
+defaultReceiverConfig name = ReceiverConfig name 65536
 
 -- | Run multicast receiver
 runReceiver :: (MonadIO m) => ReceiverConfig -> ConduitT Message RemotePacket m ()

@@ -1,5 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-
 module Network.Remote.Socket.Broadcaster
   ( BroadcasterConfig (..),
     defaultBroadcasterConfig,
@@ -17,7 +15,6 @@ import qualified Network.Remote.Protocol.SimpleStream.ByteString as S
 import Network.Remote.Socket.MulticastSocket
 import qualified Network.Socket.ByteString as B
 import qualified System.IO.Streams as Streams
-import Control.Monad.IO.Class
 import Conduit
 import Codec.Binary.UTF8.String as C
 
@@ -32,34 +29,20 @@ defaultBroadcasterConfig name (Just size) = BroadcasterConfig Nothing size
 instance Show BroadcasterConfig where
   show (BroadcasterConfig name _) = "BroadcasterConfig[" ++ show name ++ "]"
 
--- | Broadcast a payload
-broadcast :: (MonadIO m) => BroadcasterConfig -> ConduitT RemotePacket ByteString m ()
+-- | Broadcast a payload.
+-- This does /NOT/ perform 'IO' until fuses with 'MulticastConduit'.
+broadcast :: (Monad m, Command c) => BroadcasterConfig -> ConduitT (c, ByteString) ByteString m ()
 broadcast (BroadcasterConfig m size) =
-  awaitForever $ \RemotePacket {..} -> 
+  awaitForever $ \(command, payload) -> 
     if isNothing m && (command =.= YELL_ACK || command =.= ADDRESS_ACK)
       then error "No name"
-      else yield . B.pack $ runConduitPure $ (do 
+      else yield . B.pack . runConduitPure . (.| sinkList) $ do 
         -- write name
         case m of 
-          -- attention! you need to add 0 after the String manully
+          -- Attention: A @0@ should be appended after the 'String' manully to indicate the ending.
           (Just name) -> yieldMany . C.encode $ name ++ "\0"
           Nothing -> return ()
         -- Write cmd
         yield $ packID command
         -- Write payload
-        yieldMany $ B.unpack payload) .| sinkList
-
-        -- ( liftIO $ do
-        --     stream <- S.empty size
-        --     -- Write name
-        --     case m of
-        --       (Just name) -> S.writeEnd stream name
-        --       Nothing -> return ()
-        --     -- Write cmd
-        --     S.write stream $ packID command
-        --     -- Write payload
-        --     S.writeList stream $ B.unpack payload
-        --     S.toList stream
-        -- )
-        --   >>= yield
-        --   . B.pack
+        yieldMany $ B.unpack payload 
