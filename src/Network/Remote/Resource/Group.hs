@@ -14,7 +14,7 @@ import Data.IORef
 import Data.Int (Int64)
 import qualified Data.Map as M
 import Data.Time.Clock.System (getSystemTime, systemSeconds)
-import Network.Remote.Protocol (Name)
+import Network.Remote.Protocol (NodeName)
 
 currentTimeSeconds :: IO Int64
 currentTimeSeconds = systemSeconds <$> getSystemTime
@@ -29,7 +29,7 @@ newGroup = Gp <$> newIORef M.empty
 withGroup :: Group -> ReaderT Group m a -> m a
 withGroup = flip runReaderT
 
-detect :: (MonadIO m) => Name -> ReaderT Group m (Name, Int64)
+detect :: (MonadIO m) => NodeName -> ReaderT Group m (NodeName, Int64)
 detect name =
   ReaderT $ \group ->
     liftIO $ do
@@ -37,14 +37,14 @@ detect name =
       modifyIORef (_core group) $ \m -> M.insert name t m
       return (name, t)
 
-get :: (MonadIO m) => Name -> ReaderT Group m (Maybe Int64)
+get :: (MonadIO m) => NodeName -> ReaderT Group m (Maybe Int64)
 get name =
   ReaderT $ \group ->
     liftIO $ do
       m <- readIORef $ _core group
       return $ M.lookup name m
 
-getByTimeout :: (MonadIO m) => Int64 -> ReaderT Group m [Name]
+getByTimeout :: (MonadIO m) => Int64 -> ReaderT Group m [NodeName]
 getByTimeout timeout =
   ReaderT $ \group ->
     liftIO $ do

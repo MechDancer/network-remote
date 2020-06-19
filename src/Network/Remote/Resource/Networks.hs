@@ -6,7 +6,6 @@ import Data.Char (toLower)
 import Data.Hashable
 import Data.List (isInfixOf)
 import Network.Info
-import System.IO.Unsafe (unsafePerformIO)
 
 -- | Scan network interfaces right now
 scanNetwork :: IO [NetworkInterface]

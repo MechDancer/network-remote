@@ -1,20 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Codec.Binary.UTF8.String (encodeString)
 import Conduit
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Monad (forever)
-import Data.Conduit.Network.UDP
 import qualified Data.ByteString.Char8 as B
+import Data.ByteString.UTF8 (fromString)
+import Data.Conduit.Network.UDP
 import Network.Info (NetworkInterface, ipv4, name)
 import Network.Multicast
-import Network.Remote.Protocol
+import Network.Remote
+import Network.Remote.Protocol.Conduit.ByteString
 import Network.Remote.Resource.Address
 import Network.Remote.Resource.Networks (scanNetwork)
-import Network.Remote.Socket.Broadcaster (broadcast, defaultBroadcasterConfig)
 import Network.Remote.Socket.MulticastSocket
-import Network.Socket.ByteString
-import Network.Remote.Socket.Receiver (defaultReceiverConfig, runReceiver)
 import System.Environment
 
 main :: IO ()
@@ -32,9 +30,10 @@ main = do
   runConduit $ yieldMany [1 .. 1000] .| mapMC (\x -> threadDelay 100 >> (return . B.pack . (++ "\n") . show $ x)) .| o
   print "The last number should be 1000."
 
--- conf = defaultBroadcasterConfig (return "Alice")
--- runConduit $ yieldMany [1..100] .| mapC (\int -> (CommonCmd, "Hi there: " <> (B.pack . show $ int))) .| broadcast conf .| o
+printUTF8 :: (Show a) => a -> IO ()
+printUTF8 = B.putStrLn . fromString . show
 
+-- runConduit $ yieldMany [1..100] .| mapC (\int -> (CommonCmd, "Hi there: " <> (B.pack . show $ int))) .| broadcast "Alice" .| o
 
 -- From 'network-multicast'
 {- nativeTest = do

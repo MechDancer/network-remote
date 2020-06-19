@@ -13,11 +13,11 @@ import Control.Concurrent.MVar (MVar, modifyMVar_, newMVar, readMVar)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT (..), runReaderT)
 import qualified Data.Map as M
-import Network.Remote.Protocol (Name)
+import Network.Remote.Protocol (NodeName)
 import Network.Socket (HostAddress, PortNumber, SockAddr, SockAddr (SockAddrInet), tupleToHostAddress)
 
 newtype Addresses = Ad
-  { _core :: MVar (M.Map Name SockAddr)
+  { _core :: MVar (M.Map NodeName SockAddr)
   }
 
 newAddresses :: IO Addresses
@@ -26,13 +26,13 @@ newAddresses = Ad <$> newMVar M.empty
 withAddresses :: Addresses -> ReaderT Addresses m a -> m a
 withAddresses = flip runReaderT
 
-insertSockAddr :: (MonadIO m) => Name -> SockAddr -> ReaderT Addresses m ()
+insertSockAddr :: (MonadIO m) => NodeName -> SockAddr -> ReaderT Addresses m ()
 insertSockAddr name addr = ReaderT $ \(Ad var) -> liftIO $ modifyMVar_ var $ \m -> return $ M.insert name addr m
 
-getSockAddr :: (MonadIO m) => Name -> ReaderT Addresses m (Maybe SockAddr)
+getSockAddr :: (MonadIO m) => NodeName -> ReaderT Addresses m (Maybe SockAddr)
 getSockAddr name = ReaderT $ \(Ad var) -> liftIO $readMVar var >>= \m -> return $ m M.!? name
 
-insertPort :: (MonadIO m) => Name -> PortNumber -> ReaderT Addresses m ()
+insertPort :: (MonadIO m) => NodeName -> PortNumber -> ReaderT Addresses m ()
 insertPort name port =
   ReaderT $ \(Ad var) ->
     liftIO
@@ -45,7 +45,7 @@ insertPort name port =
               Nothing -> SockAddrInet port $ tupleToHostAddress (0, 0, 0, 0)
               Just (SockAddrInet _ addr) -> SockAddrInet port addr
 
-insertAddr :: (MonadIO m) => Name -> HostAddress -> ReaderT Addresses m ()
+insertAddr :: (MonadIO m) => NodeName -> HostAddress -> ReaderT Addresses m ()
 insertAddr name addr =
   ReaderT $ \(Ad var) ->
     liftIO

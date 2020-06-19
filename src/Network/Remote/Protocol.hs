@@ -6,7 +6,7 @@ module Network.Remote.Protocol
     RemotePacket (..),
     remotePacket,
     (=.=),
-    Name,
+    NodeName,
   )
 where
 
@@ -14,7 +14,9 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Data.Word (Word8)
 
-type Name = String
+-- | The name of this terminal.
+-- It will be encoded into datagram during communicating.
+type NodeName = String
 
 data CommonCmd = CommonCmd deriving (Eq)
 
@@ -68,12 +70,12 @@ instance Command CommonCmd where
 (=.=) a b = packID a == packID b
 
 data RemotePacket = RemotePacket
-  { sender :: !Name,
+  { sender :: !NodeName,
     command :: {-# UNPACK #-} !Word8,
     payload :: {-# UNPACK #-} !ByteString
   }
   deriving (Show)
 
 -- | Build a `RemotePacket`
-remotePacket :: (Command m) => Name -> m -> ByteString -> RemotePacket
+remotePacket :: (Command m) => NodeName -> m -> ByteString -> RemotePacket
 remotePacket name cmd = RemotePacket name (packID cmd)
