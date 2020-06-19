@@ -1,6 +1,7 @@
 module Network.Remote.Socket.Broadcaster
   ( BroadcasterConfig (..),
     defaultBroadcasterConfig,
+    payloadEncoder,
     broadcast,
   )
 where
@@ -19,30 +20,32 @@ import Conduit
 import Codec.Binary.UTF8.String as C
 
 data BroadcasterConfig = BroadcasterConfig
-  { name :: !(Maybe String),
+  { name :: !String,
     size :: !Int
   }
 
-defaultBroadcasterConfig name Nothing = BroadcasterConfig name 0x4000
-defaultBroadcasterConfig name (Just size) = BroadcasterConfig Nothing size
+defaultBroadcasterConfig name = BroadcasterConfig name 0x4000
 
 instance Show BroadcasterConfig where
   show (BroadcasterConfig name _) = "BroadcasterConfig[" ++ show name ++ "]"
 
--- | Broadcast a payload.
+-- | Encode a payload.
 -- This does /NOT/ perform 'IO' until fuses with 'MulticastConduit'.
-broadcast :: (Monad m, Command c) => BroadcasterConfig -> ConduitT (c, ByteString) ByteString m ()
-broadcast (BroadcasterConfig m size) =
+payloadEncoder :: (Monad m, Command c) => BroadcasterConfig -> ConduitT (c, ByteString) ByteString m ()
+payloadEncoder (BroadcasterConfig name size) =
   awaitForever $ \(command, payload) -> 
-    if isNothing m && (command =.= YELL_ACK || command =.= ADDRESS_ACK)
-      then error "No name"
-      else yield . B.pack . runConduitPure . (.| sinkList) $ do 
-        -- write name
-        case m of 
-          -- Attention: A @0@ should be appended after the 'String' manully to indicate the ending.
-          (Just name) -> yieldMany . C.encode $ name ++ "\0"
-          Nothing -> return ()
-        -- Write cmd
-        yield $ packID command
-        -- Write payload
-        yieldMany $ B.unpack payload 
+    yield . B.pack . runConduitPure . (.| sinkList) $ do 
+    -- write name
+    -- Attention: A @0@ should be appended after the 'String' manully to indicate the ending.
+    yieldMany . C.encode $ name ++ "\0"
+    -- Write cmd
+    yield $ packID command
+    -- Write payload
+    yieldMany $ B.unpack payload 
+
+-- | Send packet to all opened socksts.
+broadcast :: (MonadIO m, Command c) => BroadcasterConfig -> MulticastSocketManager -> ConduitT (c, ByteString) o m ()
+broadcast config manager = payloadEncoder config .| awaitForever (\pack -> do 
+  socks <- map (\(_,s) -> output.multicastSocketToConduit $ s) <$> withManager manager openedSockets
+  forM_ socks (\s -> yield pack .| s)
+  )
