@@ -82,11 +82,11 @@ openedSockets ::
 openedSockets = ReaderT $ liftIO . H.toList . core
 
 mkMulticastConduit ::
-  (MonadIO m) =>
+  (MonadIO m,MonadIO n) =>
   HostName ->
   PortNumber ->
   Maybe NetworkInterface ->
-  m (MulticastConduit m)
+  m (MulticastConduit n)
 mkMulticastConduit host port m = liftIO $ do
   (s, addr) <-  multicastSender host port
   r <-  multicastReceiver host port
