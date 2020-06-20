@@ -95,7 +95,7 @@ mkMulticastConduit host port m = liftIO $ do
 
 -- | Get the default multicast socket retrieving all packets (Manager will /not/ hold this socket).
 defaultMulticastConduit ::
-  (MonadIO m) => ReaderT MulticastSocketManager m (MulticastConduit m)
+  (MonadIO m, MonadIO n) => ReaderT MulticastSocketManager m (MulticastConduit n)
 defaultMulticastConduit =
   ReaderT $ \(Mgr (host, port) _) -> mkMulticastConduit host port Nothing
 
