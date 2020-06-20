@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 
 import Conduit
 import Control.Concurrent (forkIO, threadDelay)
@@ -22,18 +24,29 @@ main = do
   networks <- scanNetwork
   print "Scanning network..."
   print networks
+  let terminalName = "Alice"
+      receiverConfig = ReceiverConfig "Bob" addresses networks manager
+
   -- Open all sockets manually (errors might be aroused due to some unexpected network interfaces)
-  --  withManager manager openAllSockets
-  (MulticastConduit i o) <- withManager manager defaultMulticastConduit
-  forkIO $ runConduit $ i .| mapC (\(Message a _) -> a) .| stdoutC
-  -- This will send 1000 times "Hello" into UDP network
-  runConduit $ yieldMany [1 .. 1000] .| mapMC (\x -> threadDelay 100 >> (return . B.pack . (++ "\n") . show $ x)) .| o
-  print "The last number should be 1000."
+  withManager manager openAllSockets
+
+  -- Receiver "Bob"
+  forkIO $ runConduit $
+    receivePacket receiverConfig
+      .| mapC (\RemotePacket {..} -> "[Bob] Receive packet from " ++ sender ++ ", with command " ++ show command ++ " , and payload" ++ show payload)
+      .| printC
+  -- Sender "Alice"
+  runConduit $
+    yieldMany [1 .. 1000]
+      .| mapMC (\x -> threadDelay 100 >> (return . B.pack . (++ "\n") . show $ x))
+      .| mapC (CommonCmd,)
+      .| mapMC (\x@(cmd, pack) -> print ("[Alice] Send packet with command " ++ show cmd ++ " and payload " ++ show pack) >> return x)
+      .| broadcast "Alice" manager
+  -- Wait last packet
+  threadDelay 100
 
 printUTF8 :: (Show a) => a -> IO ()
 printUTF8 = B.putStrLn . fromString . show
-
--- runConduit $ yieldMany [1..100] .| mapC (\int -> (CommonCmd, "Hi there: " <> (B.pack . show $ int))) .| broadcast "Alice" .| o
 
 -- From 'network-multicast'
 {- nativeTest = do

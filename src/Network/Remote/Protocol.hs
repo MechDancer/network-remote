@@ -18,7 +18,7 @@ import Data.Word (Word8)
 -- It will be encoded into datagram during communicating.
 type NodeName = String
 
-data CommonCmd = CommonCmd deriving (Eq)
+data CommonCmd = CommonCmd deriving (Show, Eq)
 
 data UdpCmd
   = YELL_ASK
@@ -27,13 +27,13 @@ data UdpCmd
   | ADDRESS_ACK
   | PACKET_SLICE
   | TOPIC_MESSAGE
-  deriving (Eq)
+  deriving (Show, Eq)
 
 data TcpCmd
   = Mail
   | Dialog
   | Blocking
-  deriving (Eq)
+  deriving (Show, Eq)
 
 class (Eq a) => Command a where
   packID :: a -> Word8

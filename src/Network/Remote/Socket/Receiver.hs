@@ -2,7 +2,8 @@
 
 module Network.Remote.Socket.Receiver
   ( ReceiverConfig (..),
-    receive,
+    receivePacket,
+    receivePayload,
   )
 where
 
@@ -14,6 +15,7 @@ import qualified Data.ByteString as B
 import Data.Conduit.Network.UDP
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
+import qualified Debug.Trace as D
 import Network.Info
 import Network.Mask
 import Network.Remote.Protocol
@@ -30,8 +32,8 @@ data ReceiverConfig = ReceiverConfig
   }
 
 -- | Create a multicast receiver stream.
-receive :: (MonadIO m) => ReceiverConfig -> ConduitT i RemotePacket m ()
-receive ReceiverConfig {..} = do
+receivePacket :: (MonadIO m) => ReceiverConfig -> ConduitT i RemotePacket m ()
+receivePacket ReceiverConfig {..} = do
   MulticastConduit {..} <- withManager socketManager defaultMulticastConduit
   (input .|) $ awaitForever $ \Message {..} ->
     yieldBS msgData .| do
@@ -54,6 +56,12 @@ receive ReceiverConfig {..} = do
               -- Open sockets
               withManager socketManager $ openSocket . fst . head $ filter snd matched
               yield $ RemotePacket sender cmd (B.pack rest)
+
+receivePayload :: (MonadIO m, Command c) => ReceiverConfig -> [c] -> ConduitT i ByteString m ()
+receivePayload config interests =
+  receivePacket config
+    .| filterC (\RemotePacket {..} -> command `elem` map packID interests)
+    .| mapC (\RemotePacket {..} -> payload)
 
 match :: NetworkInterface -> SockAddr -> IO Bool
 match interface addr =
