@@ -28,7 +28,7 @@ main = do
       receiverConfig = ReceiverConfig "Bob" addresses networks manager
 
   -- Open all sockets manually (errors might be aroused due to some unexpected network interfaces)
-  withManager manager openAllSockets
+  withManager manager $ openSocket (head networks)
 
   -- Receiver "Bob"
   forkIO $ runConduit $

@@ -15,7 +15,6 @@ import qualified Data.ByteString as B
 import Data.Conduit.Network.UDP
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
-import qualified Debug.Trace as D
 import Network.Info
 import Network.Mask
 import Network.Remote.Protocol
