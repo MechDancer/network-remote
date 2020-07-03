@@ -11,6 +11,7 @@ import Data.ByteString (ByteString, pack, unpack)
 import Data.Word (Word8)
 import Network.Remote
 import Network.Remote.Protocol.Conduit.ByteString
+import Network.Remote.Socket.MulticastSocket
 
 type Topic = String
 
@@ -54,7 +55,7 @@ paintFrame2 topic list =
     yieldMany list
       .| awaitForever
         ( \group -> do
-            yieldMany . concatMap (\(x, y) -> unpack . encodeMany $ [x, y]) group
+            yieldMany $ concatMap (\(x, y) -> unpack . encodeMany $ [x, y]) group
             yieldMany $ encodeU naN
             yieldMany $ encodeU naN
         )
@@ -65,10 +66,13 @@ paintFrame3 topic list =
     yieldMany list
       .| awaitForever
         ( \group -> do
-            yieldMany . concatMap (\(x, y, z) -> unpack . encodeMany $ [x, y, z]) group
+            yieldMany $ concatMap (\(x, y, z) -> unpack . encodeMany $ [x, y, z]) group
             yieldMany $ encodeU naN
             yieldMany $ encodeU naN
         )
+
+broadcastPainting :: Pack -> TerminalName -> MulticastSocketManager -> IO ()
+broadcastPainting packet name manager = runConduit $ yield packet .| broadcast name manager
 
 naN :: Float
 naN = read "NaN"
