@@ -24,7 +24,7 @@ readWithBSLength = do
   result <- takeC n .| sinkList
   return $ B.pack result
 
--- | Encode a 'String' to '[Word8]' with @0@ suffix.
+-- | Encode a 'String' to '[Word8]' with suffix @0@.
 yieldStringEnd :: (Monad m) => String -> ConduitT i Word8 m ()
 yieldStringEnd str = yieldMany (C.encode str) >> yield 0
 

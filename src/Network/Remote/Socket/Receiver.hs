@@ -24,7 +24,7 @@ import Network.Remote.Socket.MulticastSocket
 import Network.Socket (SockAddr)
 
 data ReceiverConfig = ReceiverConfig
-  { name :: !NodeName,
+  { name :: !TerminalName,
     addresses :: !Addresses,
     networks :: ![NetworkInterface],
     socketManager :: !MulticastSocketManager

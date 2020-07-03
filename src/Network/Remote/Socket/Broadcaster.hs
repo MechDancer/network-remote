@@ -15,7 +15,7 @@ import qualified Network.Socket.ByteString as B
 
 -- | Encode a payload.
 -- This does /NOT/ perform 'IO' until fuses with 'MulticastConduit'.
-payloadEncoder :: (Monad m, Command c) => NodeName -> ConduitT (c, ByteString) ByteString m ()
+payloadEncoder :: (Monad m, Command c) => TerminalName -> ConduitT (c, ByteString) ByteString m ()
 payloadEncoder name =
   awaitForever $ \(command, payload) ->
     yield . B.pack . runConduitPure . (.| sinkList) $ do
@@ -27,7 +27,7 @@ payloadEncoder name =
       yieldMany $ B.unpack payload
 
 -- | Send packet to all opened sockets.
-broadcast :: (MonadIO m, Command c) => NodeName -> MulticastSocketManager -> ConduitT (c, ByteString) o m ()
+broadcast :: (MonadIO m, Command c) => TerminalName -> MulticastSocketManager -> ConduitT (c, ByteString) o m ()
 broadcast name manager =
   payloadEncoder name
     .| awaitForever
