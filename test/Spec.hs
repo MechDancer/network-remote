@@ -33,14 +33,14 @@ main = do
   -- Receiver "Bob"
   forkIO $ runConduit $
     receivePacket receiverConfig
-      .| mapC (\RemotePacket {..} -> "[Bob] Receive packet from " ++ sender ++ ", with command " ++ show command ++ " , and payload" ++ show payload)
+      .| mapC (\RemotePacket {..} -> "[Bob] Receive packet from " ++ sender ++ ", with command " ++ show command ++ ", and payload: " ++ show payload)
       .| printC
   -- Sender "Alice"
   runConduit $
     yieldMany [1 .. 1000]
       .| mapMC (\x -> threadDelay 100 >> (return . B.pack . (++ "\n") . show $ x))
       .| mapC (CommonCmd,)
-      .| mapMC (\x@(cmd, pack) -> print ("[Alice] Send packet with command " ++ show cmd ++ " and payload " ++ show pack) >> return x)
+      .| mapMC (\x@(cmd, pack) -> print ("[Alice] Send packet with command " ++ show cmd ++ ", and payload: " ++ show pack) >> return x)
       .| broadcast "Alice" manager
   -- Wait last packet
   threadDelay 100
