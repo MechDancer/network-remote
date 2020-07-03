@@ -5,7 +5,6 @@
 module Painter where
 
 import Conduit
-import Control.Monad
 import Data.Bits ((.|.))
 import Data.Serialize
 import Data.ByteString (ByteString, pack, unpack)
@@ -53,21 +52,23 @@ paintFrame2 :: (Number a) => Topic -> [[Vector2D a]] -> Pack
 paintFrame2 topic list =
   paintRaw topic (2 .|. frameMask) $ pack . runConduitPure . (.| sinkList) $
     yieldMany list
-      .| ( awaitForever $ \group -> do
-             yieldMany . concat $ map (\(x, y) -> unpack . encodeMany $ [x, y]) group
-             yieldMany $ encodeU naN
-             yieldMany $ encodeU naN
-         )
+      .| awaitForever
+        ( \group -> do
+            yieldMany . concatMap (\(x, y) -> unpack . encodeMany $ [x, y]) group
+            yieldMany $ encodeU naN
+            yieldMany $ encodeU naN
+        )
 
 paintFrame3 :: (Number a) => Topic -> [[Vector3D a]] -> Pack
 paintFrame3 topic list =
   paintRaw topic (3 .|. frameMask) $ pack . runConduitPure . (.| sinkList) $
     yieldMany list
-      .| ( awaitForever $ \group -> do
-             yieldMany . concat $ map (\(x, y, z) -> unpack . encodeMany $ [x, y, z]) group
-             yieldMany $ encodeU naN
-             yieldMany $ encodeU naN
-         )
+      .| awaitForever
+        ( \group -> do
+            yieldMany . concatMap (\(x, y, z) -> unpack . encodeMany $ [x, y, z]) group
+            yieldMany $ encodeU naN
+            yieldMany $ encodeU naN
+        )
 
 naN :: Float
 naN = read "NaN"
