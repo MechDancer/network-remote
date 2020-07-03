@@ -1,7 +1,7 @@
 name:                network-remote
 version:             0.1.0.0
 github:              "MechDancer/network-remote"
-license:             BSD3
+license:             WTFPL
 author:              "MechDancer"
 maintainer:          "berberman, xxczxp"
 copyright:           "2020 MechDancer"
@@ -55,5 +55,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - network-remote
-    - parsec
     - cereal
