@@ -30,7 +30,7 @@ frameMask :: Word8
 frameMask = 10
 
 paintRaw :: Topic -> Word8 -> ByteString -> Pack
-paintRaw topic byte bs = (paintCommand,) . pack . runConduitPure . (.| sinkList) $ do
+paintRaw topic byte bs = (paintCommand,) . runProducer $ do
   yieldStringEnd topic
   yield byte
   yieldBS bs
@@ -51,25 +51,27 @@ paint3 topic (x, y, z) = paintRaw topic 1 $ encodeMany [x, y, z]
 
 paintFrame2 :: (Number a) => Topic -> [[Vector2D a]] -> Pack
 paintFrame2 topic list =
-  paintRaw topic (2 .|. frameMask) $ pack . runConduitPure . (.| sinkList) $
-    yieldMany list
-      .| awaitForever
-        ( \group -> do
-            yieldMany $ concatMap (\(x, y) -> unpack . encodeMany $ [x, y]) group
-            yieldMany $ encodeU naN
-            yieldMany $ encodeU naN
-        )
+  paintRaw topic (2 .|. frameMask) $
+    runProducer $
+      yieldMany list
+        .| awaitForever
+          ( \group -> do
+              yieldMany $ concatMap (\(x, y) -> unpack . encodeMany $ [x, y]) group
+              yieldMany $ encodeU naN
+              yieldMany $ encodeU naN
+          )
 
 paintFrame3 :: (Number a) => Topic -> [[Vector3D a]] -> Pack
 paintFrame3 topic list =
-  paintRaw topic (3 .|. frameMask) $ pack . runConduitPure . (.| sinkList) $
-    yieldMany list
-      .| awaitForever
-        ( \group -> do
-            yieldMany $ concatMap (\(x, y, z) -> unpack . encodeMany $ [x, y, z]) group
-            yieldMany $ encodeU naN
-            yieldMany $ encodeU naN
-        )
+  paintRaw topic (3 .|. frameMask) $
+    runProducer $
+      yieldMany list
+        .| awaitForever
+          ( \group -> do
+              yieldMany $ concatMap (\(x, y, z) -> unpack . encodeMany $ [x, y, z]) group
+              yieldMany $ encodeU naN
+              yieldMany $ encodeU naN
+          )
 
 broadcastPainting :: Pack -> TerminalName -> MulticastSocketManager -> IO ()
 broadcastPainting packet name manager = runConduit $ yield packet .| broadcast name manager

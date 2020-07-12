@@ -18,7 +18,7 @@ import qualified Network.Socket.ByteString as B
 payloadEncoder :: (Monad m, Command c) => TerminalName -> ConduitT (c, ByteString) ByteString m ()
 payloadEncoder name =
   awaitForever $ \(command, payload) ->
-    yield . B.pack . runConduitPure . (.| sinkList) $ do
+    yield . runProducer $ do
       -- write name
       yieldStringEnd name
       -- Write cmd

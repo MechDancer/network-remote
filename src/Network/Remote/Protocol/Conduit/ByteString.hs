@@ -8,6 +8,13 @@ import qualified Data.ByteString as B
 import Data.Word (Word8)
 import qualified Network.Remote.Protocol.ZigZag as ZigZag
 
+runProducerM :: (Monad m) => ConduitT () Word8 m () -> m ByteString
+runProducerM c = fmap B.pack $ runConduit $ c .| sinkList
+
+runProducer :: ConduitT () Word8 Identity () -> ByteString
+runProducer = B.pack . runConduitPure . (.| sinkList)
+
+-- | Port a 'ByteString' into 'Word8' stream.
 yieldBS :: (Monad m) => ByteString -> ConduitT i Word8 m ()
 yieldBS = yieldMany . B.unpack
 
